@@ -1,0 +1,14 @@
+[package]
+name = "httpdir-tui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Only the tokio features actually used: a multi-threaded runtime, the
+# `#[tokio::main]` macro, channels (sync), and a timeout primitive.
+# "full" would pull in fs, process, signal, etc. that this program never
+# touches -- more to compile, more to audit, no benefit here.
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "macros", "sync", "time"] }
+crossterm = "0.28"
+ratatui = "0.29"
+httpdirectory = "0.19"
