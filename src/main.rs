@@ -10,11 +10,13 @@
 //!     program draws into, leaving the user's normal shell scrollback
 //!     untouched. Leaving it restores exactly what was on screen before
 //!     the program started.
+//!
 //! Both must be explicitly entered on startup and left on exit — ratatui
 //! does not do this automatically, which is why `main` wraps `run(...)`
 //! and always restores the terminal afterwards, even on error.
 
 mod app;
+mod download;
 mod fetch;
 mod ui;
 
@@ -31,6 +33,7 @@ use ratatui::Terminal;
 use tokio::sync::mpsc;
 
 use app::App;
+use download::{DownloadMessage, Downloader};
 use fetch::{spawn_fetch, FetchMessage, FetchRequest};
 
 const DEFAULT_URL: &str = "https://cloud.debian.org/images/cloud/";
@@ -44,6 +47,11 @@ async fn main() -> io::Result<()> {
     let start_url = std::env::args()
         .nth(1)
         .unwrap_or_else(|| DEFAULT_URL.to_string());
+
+    // Built before touching the terminal: if the HTTP client cannot be
+    // created, the error is printed on a normal, un-broken terminal.
+    let (dl_tx, mut dl_rx) = mpsc::unbounded_channel::<DownloadMessage>();
+    let downloader = Downloader::new(dl_tx).map_err(io::Error::other)?;
 
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -63,7 +71,15 @@ async fn main() -> io::Result<()> {
     let mut app = App::new();
     spawn_fetch(tx.clone(), FetchRequest::Root(start_url));
 
-    let result = run(&mut terminal, &mut app, &mut rx, &tx).await;
+    let result = run(
+        &mut terminal,
+        &mut app,
+        &mut rx,
+        &tx,
+        &mut dl_rx,
+        &downloader,
+    )
+    .await;
 
     // Always restore the terminal, even if `run` returned an error —
     // otherwise a crash would leave the user's shell in raw mode /
@@ -82,19 +98,34 @@ async fn run(
     app: &mut App,
     rx: &mut mpsc::UnboundedReceiver<FetchMessage>,
     tx: &mpsc::UnboundedSender<FetchMessage>,
+    dl_rx: &mut mpsc::UnboundedReceiver<DownloadMessage>,
+    downloader: &Downloader,
 ) -> io::Result<()> {
     loop {
         // `terminal.draw` takes a closure that receives the `Frame` for
         // this iteration and is expected to render the whole UI into it
         // (see `ui::draw`). ratatui diffs the result against the
         // previous frame and only writes the cells that changed.
-        terminal.draw(|frame| ui::draw(frame, app))?;
+        if app.is_ui_dirty {
+            terminal.draw(|frame| ui::draw(frame, app))?;
+            app.ui_is_clean();
+        }
 
         // Non-blocking: if a background fetch has finished since the
         // last iteration, apply its result now. If nothing is ready,
         // `try_recv` returns immediately instead of waiting.
-        if let Ok(message) = rx.try_recv() {
+        // `while let` (not `if let`): drain everything that is ready, so
+        // results never pile up at one message per 100ms iteration.
+        while let Ok(message) = rx.try_recv() {
             app.apply_fetch_result(message);
+        }
+
+        while let Ok(message) = dl_rx.try_recv() {
+            app.apply_download_result(message);
+        }
+
+        if app.active_downloads() > 0 {
+            app.ui_is_dirty();
         }
 
         // crossterm's `event::poll` blocks for up to the given duration,
@@ -104,32 +135,44 @@ async fn run(
         // instead of blocking forever is what lets this loop also check
         // the fetch channel regularly, without a second thread and
         // without busy-waiting (the thread is asleep between polls).
-        if event::poll(Duration::from_millis(100))? {
-            if let Event::Key(key) = event::read()? {
-                // On most platforms a single physical key press only
-                // generates a `Press` event, but on terminals with the
-                // "kitty keyboard protocol" it can also generate
-                // `Repeat`/`Release`; filtering to `Press` keeps behavior
-                // consistent everywhere.
-                if key.kind == KeyEventKind::Press {
-                    match key.code {
-                        KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
-                        KeyCode::Char('s') => app.sort_by_size(),
-                        KeyCode::Char('d') => app.sort_by_date(),
-                        KeyCode::Char('n') => app.sort_by_name(),
-                        KeyCode::Down => app.select_next(),
-                        KeyCode::Up => app.select_previous(),
-                        KeyCode::Enter => {
-                            if let Some(request) = app.enter_selected() {
-                                spawn_fetch(tx.clone(), request);
+        if event::poll(Duration::from_millis(50))? {
+            match event::read()? {
+                Event::Key(key) => {
+                    // On most platforms a single physical key press only
+                    // generates a `Press` event, but on terminals with the
+                    // "kitty keyboard protocol" it can also generate
+                    // `Repeat`/`Release`; filtering to `Press` keeps behavior
+                    // consistent everywhere.
+                    if key.kind == KeyEventKind::Press {
+                        app.ui_is_dirty();
+                        match key.code {
+                            KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
+                            KeyCode::Char('s') => app.sort_by_size(),
+                            KeyCode::Char('d') => app.sort_by_date(),
+                            // Shift+d: only one modifier away from the sort key
+                            // above, hence the `Char` match on the capital.
+                            KeyCode::Char('g') => {
+                                if let Some(job) = app.download_selected() {
+                                    downloader.spawn(job);
+                                }
                             }
+                            KeyCode::Char('n') => app.sort_by_name(),
+                            KeyCode::Down => app.select_next(),
+                            KeyCode::Up => app.select_previous(),
+                            KeyCode::Enter => {
+                                if let Some(request) = app.enter_selected() {
+                                    spawn_fetch(tx.clone(), request);
+                                }
+                            }
+                            KeyCode::Backspace | KeyCode::Left => {
+                                app.go_back();
+                            }
+                            _ => {}
                         }
-                        KeyCode::Backspace | KeyCode::Left => {
-                            app.go_back();
-                        }
-                        _ => {}
                     }
                 }
+                Event::FocusGained | Event::Resize(_, _) => app.ui_is_dirty(),
+                _ => {}
             }
         }
     }

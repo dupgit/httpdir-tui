@@ -10,6 +10,9 @@
 //! This "one owner mutates, everyone else reads" split is what keeps the
 //! rendering code simple.
 
+use std::sync::Arc;
+
+use crate::download::{self, DownloadMessage, Job, Progress};
 use crate::fetch::{FetchMessage, FetchRequest};
 use httpdirectory::httpdirectory::HttpDirectory;
 use httpdirectory::httpdirectoryentry::HttpDirectoryEntry;
@@ -20,6 +23,21 @@ pub enum Status {
     Loading,
     Ready,
     Error(String),
+}
+
+/// Lifecycle of one download, as shown in the downloads panel.
+pub enum DownloadState {
+    Running,
+    Done,
+    Failed(String),
+}
+
+/// One line of the downloads panel. `progress` is shared with the
+/// background task, which updates it while the UI only reads it.
+pub struct Download {
+    pub name: String,
+    pub progress: Arc<Progress>,
+    pub state: DownloadState,
 }
 
 pub enum Ordering {
@@ -42,6 +60,13 @@ pub struct App {
     pub status: Status,
     pub ordering: Ordering,
     pub header: Vec<String>,
+    /// Every download started during this session, oldest first. The
+    /// index in this vector is the id used by `download::DownloadMessage`.
+    pub downloads: Vec<Download>,
+
+    /// true when something changed in the application that needs to
+    /// to draw it's frame again
+    pub is_ui_dirty: bool,
 }
 
 impl App {
@@ -58,13 +83,29 @@ impl App {
                 "Name".to_string(),
                 "Size".to_string(),
             ],
+            downloads: Vec::new(),
+            is_ui_dirty: true,
         }
+    }
+
+    /// The terminal frame has just been redraw so
+    /// it is marked as clean (not dirty)
+    pub fn ui_is_clean(&mut self) {
+        self.is_ui_dirty = false;
+    }
+
+    /// The application state has changed and the ui
+    /// needs to be redrawned to reflect this change
+    /// so it is marked as dirty
+    pub fn ui_is_dirty(&mut self) {
+        self.is_ui_dirty = true;
     }
 
     /// Called from the main loop whenever a background fetch (see
     /// `fetch.rs`) has produced a result. This is the *only* place
     /// `current`/`status` change in response to network activity.
     pub fn apply_fetch_result(&mut self, message: FetchMessage) {
+        self.ui_is_dirty();
         match message {
             FetchMessage::Loaded(dir) => {
                 self.current = Some(dir);
@@ -121,6 +162,60 @@ impl App {
         self.history.push(current.clone());
         self.status = Status::Loading;
         Some(FetchRequest::Cd(current, link))
+    }
+
+    /// Builds the job needed to download the selected entry, if it is a
+    /// file and is not already being downloaded. Returns `None` otherwise.
+    /// Invalid entries (e.g. a hostile file name) are reported in the
+    /// downloads panel instead of being silently ignored.
+    pub fn download_selected(&mut self) -> Option<Job> {
+        let entry = self.entries().get(self.selected)?;
+        if !entry.is_file() {
+            return None;
+        }
+        let name = entry.filename()?.to_string();
+        let link = entry_link(entry)?.to_string();
+        let base = self.current.as_ref()?.get_url();
+
+        // Pressing the key twice must not start two writers on one file.
+        let already_running = self
+            .downloads
+            .iter()
+            .any(|d| d.name == name && matches!(d.state, DownloadState::Running));
+        if already_running {
+            return None;
+        }
+
+        let progress = Arc::new(Progress::default());
+        let id = self.downloads.len();
+        let (job, state) = match Job::new(id, &base, &link, &name, Arc::clone(&progress)) {
+            Ok(job) => (Some(job), DownloadState::Running),
+            Err(err) => (None, DownloadState::Failed(err)),
+        };
+        self.downloads.push(Download {
+            name,
+            progress,
+            state,
+        });
+        job
+    }
+
+    /// Records the final outcome of a download task.
+    pub fn apply_download_result(&mut self, message: DownloadMessage) {
+        self.ui_is_dirty();
+        if let Some(download) = self.downloads.get_mut(message.id) {
+            download.state = match message.result {
+                Ok(()) => DownloadState::Done,
+                Err(err) => DownloadState::Failed(err),
+            };
+        }
+    }
+
+    pub fn active_downloads(&self) -> usize {
+        self.downloads
+            .iter()
+            .filter(|d| matches!(d.state, DownloadState::Running))
+            .count()
     }
 
     /// Changes ordering order each time called
@@ -210,11 +305,13 @@ impl App {
     }
 }
 
-/// Extracts the link to follow for an entry, whatever its kind.
+/// Extracts the link of an entry, whatever its kind. Callers decide what
+/// to do with it: `enter_selected` follows directories, `download_selected`
+/// fetches files.
 fn entry_link(entry: &HttpDirectoryEntry) -> Option<&str> {
     match entry {
         HttpDirectoryEntry::ParentDirectory(link) => Some(link),
         HttpDirectoryEntry::Directory(inner) => Some(inner.link()),
-        HttpDirectoryEntry::File(_) => None,
+        HttpDirectoryEntry::File(inner) => Some(inner.link()),
     }
 }

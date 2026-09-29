@@ -5,10 +5,14 @@ edition = "2021"
 
 [dependencies]
 # Only the tokio features actually used: a multi-threaded runtime, the
-# `#[tokio::main]` macro, channels (sync), and a timeout primitive.
+# `#[tokio::main]` macro, channels and semaphore (sync), a timeout
+# primitive, and async file writes for downloads (fs, io-util).
 # "full" would pull in fs, process, signal, etc. that this program never
 # touches -- more to compile, more to audit, no benefit here.
-tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "macros", "sync", "time"] }
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "macros", "sync", "time", "fs", "io-util"] }
 crossterm = "0.28"
 ratatui = "0.29"
 httpdirectory = "0.19"
+# Same major version as the one `httpdirectory` already depends on, so it
+# is compiled once and shared -- no second HTTP stack in the binary.
+reqwest = "0.13"

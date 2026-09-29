@@ -639,6 +639,7 @@ dependencies = [
  "crossterm",
  "httpdirectory",
  "ratatui",
+ "reqwest",
  "tokio",
 ]
 

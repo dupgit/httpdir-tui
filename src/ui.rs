@@ -17,11 +17,16 @@
 use httpdirectory::httpdirectoryentry::HttpDirectoryEntry;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Style, Stylize};
-use ratatui::text::Span;
+use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, Cell, Paragraph, Row, Table, TableState};
 use ratatui::Frame;
 
-use crate::app::{App, Status};
+use std::sync::atomic::Ordering::Relaxed;
+
+use crate::app::{App, Download, DownloadState, Status};
+
+/// Most recent downloads shown in the panel (older ones scroll away).
+const MAX_SHOWN_DOWNLOADS: usize = 5;
 
 /// Entry point called once per frame from the main loop (`terminal.draw`).
 /// `frame` is where widgets get rendered; `app` is read-only here — this
@@ -42,16 +47,25 @@ pub fn draw(frame: &mut Frame, app: &App) {
     //   - `Min(0)`: "take whatever is left" — used for the middle panel
     //     so it grows/shrinks with the terminal size.
     // The result is a Vec<Rect> in the same order as the constraints.
+    // The downloads panel only takes room once a download exists: one row
+    // per shown download, plus 2 for the border.
+    let shown = app.downloads.len().min(MAX_SHOWN_DOWNLOADS) as u16;
+    let downloads_height = if shown == 0 { 0 } else { shown + 2 };
+
     let chunks = Layout::vertical([
         Constraint::Length(3), // header: bordered box, needs 3 rows (1 content + 2 border)
         Constraint::Min(1),    // entry table: fills all remaining space
+        Constraint::Length(downloads_height), // downloads panel (0 = hidden)
         Constraint::Length(help), // status line: a single row, no border
     ])
     .split(area);
 
     draw_header(frame, chunks[0], app);
     draw_entries(frame, chunks[1], app);
-    draw_status_bar(frame, chunks[2], app);
+    if shown > 0 {
+        draw_downloads(frame, chunks[2], app);
+    }
+    draw_status_bar(frame, chunks[3], app);
 }
 
 /// A `Paragraph` is ratatui's plain-text widget. Wrapping it in a `Block`
@@ -141,6 +155,64 @@ fn draw_entries(frame: &mut Frame, area: Rect, app: &App) {
     frame.render_stateful_widget(table, area, &mut state);
 }
 
+/// Last few downloads with live progress. The progress numbers are atomics
+/// written by the download tasks; reading them here every frame is all the
+/// "live update" there is.
+fn draw_downloads(frame: &mut Frame, area: Rect, app: &App) {
+    let skip = app.downloads.len().saturating_sub(MAX_SHOWN_DOWNLOADS);
+    let lines: Vec<Line> = app.downloads.iter().skip(skip).map(download_line).collect();
+
+    let title = Span::styled(
+        format!(" Downloads ({} active) ", app.active_downloads()),
+        Style::default().bold(),
+    );
+    let paragraph = Paragraph::new(lines).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title(title)
+            .border_type(BorderType::Rounded)
+            .border_style(Style::default().yellow()),
+    );
+    frame.render_widget(paragraph, area);
+}
+
+fn download_line(download: &Download) -> Line<'static> {
+    let detail = match &download.state {
+        DownloadState::Running => {
+            let done = download.progress.downloaded.load(Relaxed);
+            let total = download.progress.total.load(Relaxed);
+            if let Some(percent) = done.saturating_mul(100).checked_div(total) {
+                let percent = percent.min(100);
+                format!(
+                    "{percent:>3}%  {} / {}",
+                    human_size(done),
+                    human_size(total)
+                )
+            } else {
+                human_size(done)
+            }
+        }
+        DownloadState::Done => "done".to_string(),
+        DownloadState::Failed(err) => format!("failed: {err}"),
+    };
+    Line::from(format!(" {}  {detail}", download.name))
+}
+
+fn human_size(bytes: u64) -> String {
+    const UNITS: [&str; 5] = ["B", "KiB", "MiB", "GiB", "TiB"];
+    let mut value = bytes as f64;
+    let mut unit = 0;
+    while value >= 1024.0 && unit < UNITS.len() - 1 {
+        value /= 1024.0;
+        unit += 1;
+    }
+    if unit == 0 {
+        format!("{bytes} B")
+    } else {
+        format!("{value:.1} {}", UNITS[unit])
+    }
+}
+
 /// One line of plain text, no border: a minimal status/help bar.
 fn draw_status_bar(frame: &mut Frame, area: Rect, app: &App) {
     let title = Span::styled(" Help ", Style::default().bold());
@@ -148,7 +220,7 @@ fn draw_status_bar(frame: &mut Frame, area: Rect, app: &App) {
         Status::Loading => "Loading...".to_string(),
         Status::Ready => {
             let separator = if area.width > 96 { '|' } else { '\n' };
-            format!(" Up/Down: move | Enter: open | Backspace: back {separator} n, d, s: sort by name, date, size | Esc: quit")
+            format!(" Up/Down: move | Enter: open | Backspace: back {separator} n, d, s: sort by name, date, size | g: download | Esc: quit")
         }
         Status::Error(err) => format!("Error: {err}"),
     };
