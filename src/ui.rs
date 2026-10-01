@@ -14,16 +14,14 @@
 //!   Nothing about it survives between frames except the *state* you
 //!   choose to keep yourself (here, in `App`).
 
+use crate::app::{App, Download, DownloadState, Status};
 use httpdirectory::httpdirectoryentry::HttpDirectoryEntry;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, Cell, Paragraph, Row, Table, TableState};
 use ratatui::Frame;
-
 use std::sync::atomic::Ordering::Relaxed;
-
-use crate::app::{App, Download, DownloadState, Status};
 
 /// Most recent downloads shown in the panel (older ones scroll away).
 const MAX_SHOWN_DOWNLOADS: usize = 5;
@@ -48,8 +46,8 @@ pub fn draw(frame: &mut Frame, app: &App) {
     //     so it grows/shrinks with the terminal size.
     // The result is a Vec<Rect> in the same order as the constraints.
     // The downloads panel only takes room once a download exists: one row
-    // per shown download, plus 2 for the border.
-    let shown = app.downloads.len().min(MAX_SHOWN_DOWNLOADS) as u16;
+    // per shown download, plus 2 for the border.,
+    let shown = u16::try_from(app.downloads.len().min(MAX_SHOWN_DOWNLOADS)).expect("app.downloads.len().min(MAX_SHOWN_DOWNLOADS) is 0 to 5 included which is convertible to a u16");
     let downloads_height = if shown == 0 { 0 } else { shown + 2 };
 
     let chunks = Layout::vertical([
@@ -75,8 +73,7 @@ fn draw_header(frame: &mut Frame, area: Rect, app: &App) {
     let url = app
         .current
         .as_ref()
-        .map(|dir| dir.get_url().to_string())
-        .unwrap_or_else(|| "...".to_string());
+        .map_or_else(|| "...".to_string(), |dir| dir.get_url().to_string());
 
     // Title is the text that comes along with the border
     let title = Span::styled(" URL ", Style::default().bold());
@@ -107,7 +104,7 @@ fn draw_entries(frame: &mut Frame, area: Rect, app: &App) {
     // The header row: plain text cells, bolded so it stands out from the
     // data rows below it.
     // let header = Row::new(["Type", "Date", "Name", "Size"]).style(Style::default().bold());
-    let header = Row::new(app.header.to_owned()).style(Style::default().bold());
+    let header = Row::new(app.header.clone()).style(Style::default().bold());
 
     // Turn each domain entry into a `Row` of `Cell`s. ratatui widgets are
     // built from iterators/Vecs of smaller widgets like this throughout
@@ -200,6 +197,7 @@ fn download_line(download: &Download) -> Line<'static> {
 
 fn human_size(bytes: u64) -> String {
     const UNITS: [&str; 5] = ["B", "KiB", "MiB", "GiB", "TiB"];
+    #[allow(clippy::cast_precision_loss, reason = "2^52 bytes is 4 PiB")]
     let mut value = bytes as f64;
     let mut unit = 0;
     while value >= 1024.0 && unit < UNITS.len() - 1 {
@@ -251,8 +249,7 @@ fn entry_row(entry: &HttpDirectoryEntry) -> Row<'static> {
 
 fn entry_type_label(entry: &HttpDirectoryEntry) -> &'static str {
     match entry {
-        HttpDirectoryEntry::ParentDirectory(_) => "DIR",
-        HttpDirectoryEntry::Directory(_) => "DIR",
+        HttpDirectoryEntry::ParentDirectory(_) | HttpDirectoryEntry::Directory(_) => "DIR",
         HttpDirectoryEntry::File(_) => "FILE",
     }
 }
@@ -268,10 +265,10 @@ fn entry_date_label(entry: &HttpDirectoryEntry) -> String {
     // `entry.date()` returns `chrono::NaiveDateTime`; `.format(...)` is
     // an inherent method on that type, so no extra dependency on chrono
     // is needed in this crate just to call it.
-    entry
-        .date()
-        .map(|date| date.format("%Y-%m-%d %H:%M").to_string())
-        .unwrap_or_else(|| "-".to_string())
+    entry.date().map_or_else(
+        || "-".to_string(),
+        |date| date.format("%Y-%m-%d %H:%M").to_string(),
+    )
 }
 
 fn entry_size_label(entry: &HttpDirectoryEntry) -> String {

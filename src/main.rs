@@ -20,21 +20,19 @@ mod download;
 mod fetch;
 mod ui;
 
-use std::io;
-use std::time::Duration;
-
+use app::App;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
-use ratatui::backend::CrosstermBackend;
-use ratatui::Terminal;
-use tokio::sync::mpsc;
-
-use app::App;
 use download::{DownloadMessage, Downloader};
 use fetch::{spawn_fetch, FetchMessage, FetchRequest};
+use ratatui::backend::CrosstermBackend;
+use ratatui::Terminal;
+use std::io;
+use std::time::Duration;
+use tokio::sync::mpsc;
 
 const DEFAULT_URL: &str = "https://cloud.debian.org/images/cloud/";
 

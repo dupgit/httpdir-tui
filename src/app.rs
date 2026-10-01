@@ -10,12 +10,11 @@
 //! This "one owner mutates, everyone else reads" split is what keeps the
 //! rendering code simple.
 
-use std::sync::Arc;
-
-use crate::download::{self, DownloadMessage, Job, Progress};
+use crate::download::{DownloadMessage, Job, Progress};
 use crate::fetch::{FetchMessage, FetchRequest};
 use httpdirectory::httpdirectory::HttpDirectory;
 use httpdirectory::httpdirectoryentry::HttpDirectoryEntry;
+use std::sync::Arc;
 
 /// What to show in the status bar, and (indirectly) whether a fetch is
 /// currently in flight.
@@ -129,8 +128,7 @@ impl App {
     pub fn entries(&self) -> &[HttpDirectoryEntry] {
         self.current
             .as_ref()
-            .map(|dir| dir.entries().as_slice())
-            .unwrap_or(&[])
+            .map_or(&[], |dir| dir.entries().as_slice())
     }
 
     pub fn select_next(&mut self) {
@@ -156,7 +154,7 @@ impl App {
         if entry.is_file() {
             return None;
         }
-        let link = entry_link(entry)?.to_string();
+        let link = entry_link(entry).to_string();
 
         let current = self.current.take()?;
         self.history.push(current.clone());
@@ -174,7 +172,7 @@ impl App {
             return None;
         }
         let name = entry.filename()?.to_string();
-        let link = entry_link(entry)?.to_string();
+        let link = entry_link(entry);
         let base = self.current.as_ref()?.get_url();
 
         // Pressing the key twice must not start two writers on one file.
@@ -188,7 +186,7 @@ impl App {
 
         let progress = Arc::new(Progress::default());
         let id = self.downloads.len();
-        let (job, state) = match Job::new(id, &base, &link, &name, Arc::clone(&progress)) {
+        let (job, state) = match Job::new(id, &base, link, &name, Arc::clone(&progress)) {
             Ok(job) => (Some(job), DownloadState::Running),
             Err(err) => (None, DownloadState::Failed(err)),
         };
@@ -222,8 +220,7 @@ impl App {
     fn swap_ordering(&mut self) {
         match self.ordering {
             Ordering::Ascending => self.ordering = Ordering::Descending,
-            Ordering::Descending => self.ordering = Ordering::Ascending,
-            Ordering::None => self.ordering = Ordering::Ascending,
+            Ordering::Descending | Ordering::None => self.ordering = Ordering::Ascending,
         }
     }
 
@@ -259,11 +256,11 @@ impl App {
         ordering
     }
 
-    fn add_ordering_char(&mut self, order: Ordering, index: usize) {
+    fn add_ordering_char(&mut self, order: &Ordering, index: usize) {
         let ordering = match order {
             Ordering::Ascending => '▴',
             Ordering::Descending => '▾',
-            _ => ' ',
+            Ordering::None => ' ',
         };
 
         self.header = vec![
@@ -277,17 +274,17 @@ impl App {
 
     pub fn sort_by_size(&mut self) {
         let order = self.sort(HttpDirectory::sort_by_size);
-        self.add_ordering_char(order, 3);
+        self.add_ordering_char(&order, 3);
     }
 
     pub fn sort_by_date(&mut self) {
         let order = self.sort(HttpDirectory::sort_by_date);
-        self.add_ordering_char(order, 1);
+        self.add_ordering_char(&order, 1);
     }
 
     pub fn sort_by_name(&mut self) {
         let order = self.sort(HttpDirectory::sort_by_name);
-        self.add_ordering_char(order, 2);
+        self.add_ordering_char(&order, 2);
     }
 
     /// Restores the previous listing from history, with no network call.
@@ -308,10 +305,9 @@ impl App {
 /// Extracts the link of an entry, whatever its kind. Callers decide what
 /// to do with it: `enter_selected` follows directories, `download_selected`
 /// fetches files.
-fn entry_link(entry: &HttpDirectoryEntry) -> Option<&str> {
+fn entry_link(entry: &HttpDirectoryEntry) -> &str {
     match entry {
-        HttpDirectoryEntry::ParentDirectory(link) => Some(link),
-        HttpDirectoryEntry::Directory(inner) => Some(inner.link()),
-        HttpDirectoryEntry::File(inner) => Some(inner.link()),
+        HttpDirectoryEntry::ParentDirectory(link) => link,
+        HttpDirectoryEntry::Directory(inner) | HttpDirectoryEntry::File(inner) => inner.link(),
     }
 }
