@@ -51,7 +51,9 @@ pub struct App {
     pub current: Option<HttpDirectory>,
     /// Previously visited listings, most recent last. Going back pops this
     /// stack instead of re-fetching the parent directory: it is already
-    /// known, so there is no reason to ask the server for it again.
+    /// known, so there is no reason to ask the server for it again. A
+    /// listing is only pushed once its successor has actually loaded (see
+    /// `apply_fetch_result`), so a failed navigation leaves it untouched.
     history: Vec<HttpDirectory>,
     /// Index into `entries()` of the currently highlighted row. Handed
     /// to ratatui's `ListState` each frame in `ui::draw_entries`.
@@ -104,20 +106,28 @@ impl App {
     /// `fetch.rs`) has produced a result. This is the *only* place
     /// `current`/`status` change in response to network activity.
     pub fn apply_fetch_result(&mut self, message: FetchMessage) {
-        self.ui_is_dirty();
         match message {
             FetchMessage::Loaded(dir) => {
-                self.current = Some(dir);
+                // The listing we are leaving becomes the one "back" returns
+                // to. Doing it here, on success only, is what keeps
+                // `history` consistent when a navigation fails. At startup
+                // there is no previous listing, so nothing is pushed.
+                if let Some(previous) = self.current.replace(dir) {
+                    self.history.push(previous);
+                }
                 self.selected = 0;
                 self.status = Status::Ready;
             }
             // Deliberately kept minimal: on error we keep the previous
             // listing on screen (if any) rather than clearing it, so a
             // failed navigation attempt does not lose the user's place.
+            // `enter_selected` leaves `current` and `history` untouched
+            // for exactly this reason.
             FetchMessage::Failed(err) => {
                 self.status = Status::Error(err);
             }
         }
+        self.ui_is_dirty();
     }
 
     /// Entries of the currently displayed listing, or an empty slice
@@ -128,7 +138,8 @@ impl App {
     pub fn entries(&self) -> &[HttpDirectoryEntry] {
         self.current
             .as_ref()
-            .map_or(&[], |dir| dir.entries().as_slice())
+            .map(|dir| dir.entries().as_slice())
+            .unwrap_or(&[])
     }
 
     pub fn select_next(&mut self) {
@@ -150,14 +161,21 @@ impl App {
     /// files: this skeleton only browses, it does not download or open
     /// anything -- add that deliberately, rather than by accident.
     pub fn enter_selected(&mut self) -> Option<FetchRequest> {
+        // One navigation at a time: while a fetch is in flight, its result
+        // is what decides what `current` and `history` become.
+        if matches!(self.status, Status::Loading) {
+            return None;
+        }
         let entry = self.entries().get(self.selected)?;
         if entry.is_file() {
             return None;
         }
         let link = entry_link(entry).to_string();
 
-        let current = self.current.take()?;
-        self.history.push(current.clone());
+        // `HttpDirectory::cd` consumes its receiver and drops it on error,
+        // so the task works on a clone: `current` stays displayed, and
+        // stays the place to come back to, until the new listing arrives.
+        let current = self.current.clone()?;
         self.status = Status::Loading;
         Some(FetchRequest::Cd(current, link))
     }
@@ -290,6 +308,11 @@ impl App {
     /// Restores the previous listing from history, with no network call.
     /// Returns `true` if there was something to go back to.
     pub fn go_back(&mut self) -> bool {
+        // Not while a fetch is in flight: its result would then be pushed
+        // onto a history that no longer matches what is on screen.
+        if matches!(self.status, Status::Loading) {
+            return false;
+        }
         match self.history.pop() {
             Some(previous) => {
                 self.current = Some(previous);
