@@ -16,11 +16,11 @@
 
 use crate::app::{App, Download, DownloadState, Status};
 use httpdirectory::httpdirectoryentry::HttpDirectoryEntry;
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, Cell, Paragraph, Row, Table, TableState};
-use ratatui::Frame;
 use std::sync::atomic::Ordering::Relaxed;
 
 /// Most recent downloads shown in the panel (older ones scroll away).
@@ -73,7 +73,7 @@ fn draw_header(frame: &mut Frame, area: Rect, app: &App) {
     let url = app
         .current
         .as_ref()
-        .map_or_else(|| "...".to_string(), |dir| dir.get_url().to_string());
+        .map_or_else(|| "...", |dir| dir.get_url());
 
     // Title is the text that comes along with the border
     let title = Span::styled(" URL ", Style::default().bold());
@@ -218,7 +218,9 @@ fn draw_status_bar(frame: &mut Frame, area: Rect, app: &App) {
         Status::Loading => "Loading...".to_string(),
         Status::Ready => {
             let separator = if area.width > 96 { '|' } else { '\n' };
-            format!(" Up/Down: move | Enter: open | Backspace: back {separator} n, d, s: sort by name, date, size | g: download | Esc: quit")
+            format!(
+                " Up/Down: move | Enter: open | Backspace: back {separator} n, d, s: sort by name, date, size | g: download | Esc: quit"
+            )
         }
         Status::Error(err) => format!("Error: {err}"),
     };

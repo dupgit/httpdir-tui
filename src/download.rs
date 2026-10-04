@@ -20,17 +20,17 @@
 //! with the whole file and we start over: a resume can never glue the head
 //! of one version to the tail of another.
 
-use reqwest::header::{HeaderValue, CONTENT_RANGE, ETAG, IF_RANGE, LAST_MODIFIED, RANGE};
+use reqwest::header::{CONTENT_RANGE, ETAG, HeaderValue, IF_RANGE, LAST_MODIFIED, RANGE};
 use reqwest::{Client, Response, StatusCode, Url};
 use std::error::Error;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 use std::time::Duration;
 use tokio::fs::{self, OpenOptions};
 use tokio::io::AsyncWriteExt;
-use tokio::sync::mpsc::UnboundedSender;
 use tokio::sync::Semaphore;
+use tokio::sync::mpsc::UnboundedSender;
 
 /// Be polite to the remote server: at most this many transfers at once,
 /// the others wait for a permit.
