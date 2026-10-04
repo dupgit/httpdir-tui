@@ -39,10 +39,11 @@ pub struct Download {
     pub state: DownloadState,
 }
 
-pub enum Ordering {
-    None,
-    Ascending,
-    Descending,
+#[derive(Clone)]
+pub enum SortKey {
+    Date,
+    Name,
+    Size,
 }
 
 pub struct App {
@@ -59,7 +60,7 @@ pub struct App {
     /// to ratatui's `ListState` each frame in `ui::draw_entries`.
     pub selected: usize,
     pub status: Status,
-    pub ordering: Ordering,
+    pub ordering: Option<(bool, SortKey)>,
     pub header: Vec<String>,
     /// Every download started during this session, oldest first. The
     /// index in this vector is the id used by `download::DownloadMessage`.
@@ -77,7 +78,7 @@ impl App {
             history: Vec::new(),
             selected: 0,
             status: Status::Loading,
-            ordering: Ordering::None,
+            ordering: None,
             header: vec![
                 "Type".to_string(),
                 "Date".to_string(),
@@ -102,12 +103,27 @@ impl App {
         self.is_ui_dirty = true;
     }
 
+    pub fn sort_consistent(&mut self, dir: HttpDirectory) -> HttpDirectory {
+        if let Some((ascending, ref sort_key)) = self.ordering {
+            match sort_key {
+                SortKey::Date => dir.sort_by_date(ascending),
+                SortKey::Name => dir.sort_by_name(ascending),
+                SortKey::Size => dir.sort_by_size(ascending),
+            }
+        } else {
+            dir
+        }
+    }
+
     /// Called from the main loop whenever a background fetch (see
     /// `fetch.rs`) has produced a result. This is the *only* place
     /// `current`/`status` change in response to network activity.
     pub fn apply_fetch_result(&mut self, message: FetchMessage) {
         match message {
-            FetchMessage::Loaded(dir) => {
+            FetchMessage::Loaded(mut dir) => {
+                // Sorting the new httpdirectory to keep the ordering
+                // consistent along the navigation
+                dir = self.sort_consistent(dir);
                 // The listing we are leaving becomes the one "back" returns
                 // to. Doing it here, on success only, is what keeps
                 // `history` consistent when a navigation fails. At startup
@@ -138,8 +154,7 @@ impl App {
     pub fn entries(&self) -> &[HttpDirectoryEntry] {
         self.current
             .as_ref()
-            .map(|dir| dir.entries().as_slice())
-            .unwrap_or(&[])
+            .map_or(&[], |dir| dir.entries().as_slice())
     }
 
     pub fn select_next(&mut self) {
@@ -234,35 +249,35 @@ impl App {
             .count()
     }
 
-    /// Changes ordering order each time called
-    fn swap_ordering(&mut self) {
-        match self.ordering {
-            Ordering::Ascending => self.ordering = Ordering::Descending,
-            Ordering::Descending | Ordering::None => self.ordering = Ordering::Ascending,
-        }
-    }
-
     /// Sorts the current listing by the appropriate method which from
     /// `httpdirectory` takes `self` by value and hands back a sorted
     /// `Self` -- it is a plain, synchronous, in-memory operation on
     /// already-fetched entries, so no fetch task/channel round-trip is
     /// needed here: it can run directly on the UI thread.
-    pub fn sort<F>(&mut self, f: F) -> Ordering
-    where
-        F: Fn(HttpDirectory, bool) -> HttpDirectory,
-    {
-        let mut ordering = Ordering::None;
+    pub fn sort(&mut self, sort: &SortKey) {
+        let ascending = if self.ordering.is_none() {
+            false
+        } else if let Some((ascending, _)) = self.ordering {
+            !ascending
+        } else {
+            false
+        };
+
+        self.ordering = Some((ascending, sort.clone()));
+
         if let Some(dir) = self.current.take() {
-            self.swap_ordering();
-            match self.ordering {
-                Ordering::None => self.current = Some(dir),
-                Ordering::Ascending => {
-                    self.current = Some(f(dir, true));
-                    ordering = Ordering::Ascending;
+            match sort {
+                SortKey::Date => {
+                    self.current = Some(dir.sort_by_date(ascending));
+                    self.add_ordering_char(ascending, 1);
                 }
-                Ordering::Descending => {
-                    self.current = Some(f(dir, false));
-                    ordering = Ordering::Descending;
+                SortKey::Name => {
+                    self.current = Some(dir.sort_by_name(ascending));
+                    self.add_ordering_char(ascending, 2);
+                }
+                SortKey::Size => {
+                    self.current = Some(dir.sort_by_size(ascending));
+                    self.add_ordering_char(ascending, 3);
                 }
             }
             // The old `selected` index may no longer point at the same
@@ -270,16 +285,10 @@ impl App {
             // silently highlighting an unrelated row.
             self.selected = 0;
         }
-
-        ordering
     }
 
-    fn add_ordering_char(&mut self, order: &Ordering, index: usize) {
-        let ordering = match order {
-            Ordering::Ascending => '▴',
-            Ordering::Descending => '▾',
-            Ordering::None => ' ',
-        };
+    fn add_ordering_char(&mut self, ascending: bool, index: usize) {
+        let ordering = if ascending { '▴' } else { '▾' };
 
         self.header = vec![
             "Type".to_string(),
@@ -288,21 +297,6 @@ impl App {
             "Size".to_string(),
         ];
         self.header[index] = format!("{} {ordering}", self.header[index]);
-    }
-
-    pub fn sort_by_size(&mut self) {
-        let order = self.sort(HttpDirectory::sort_by_size);
-        self.add_ordering_char(&order, 3);
-    }
-
-    pub fn sort_by_date(&mut self) {
-        let order = self.sort(HttpDirectory::sort_by_date);
-        self.add_ordering_char(&order, 1);
-    }
-
-    pub fn sort_by_name(&mut self) {
-        let order = self.sort(HttpDirectory::sort_by_name);
-        self.add_ordering_char(&order, 2);
     }
 
     /// Restores the previous listing from history, with no network call.
@@ -315,7 +309,7 @@ impl App {
         }
         match self.history.pop() {
             Some(previous) => {
-                self.current = Some(previous);
+                self.current = Some(self.sort_consistent(previous));
                 self.selected = 0;
                 self.status = Status::Ready;
                 true

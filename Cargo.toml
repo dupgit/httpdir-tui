@@ -1,7 +1,7 @@
 [package]
 name = "httpdir-tui"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 # Only the tokio features actually used: a multi-threaded runtime, the

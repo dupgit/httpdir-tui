@@ -19,17 +19,16 @@ mod app;
 mod download;
 mod fetch;
 mod ui;
-
-use app::App;
+use app::{App, SortKey};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use crossterm::execute;
 use crossterm::terminal::{
-    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+    EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
 };
 use download::{DownloadMessage, Downloader};
-use fetch::{spawn_fetch, FetchMessage, FetchRequest};
-use ratatui::backend::CrosstermBackend;
+use fetch::{FetchMessage, FetchRequest, spawn_fetch};
 use ratatui::Terminal;
+use ratatui::backend::CrosstermBackend;
 use std::io;
 use std::time::Duration;
 use tokio::sync::mpsc;
@@ -91,6 +90,7 @@ async fn main() -> io::Result<()> {
 
 /// The main loop. Each iteration: draw one frame, check for a finished
 /// background fetch, then wait (briefly) for a key press.
+#[allow(clippy::unused_async, reason = "Clippy false detection")]
 async fn run(
     terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
     app: &mut App,
@@ -145,8 +145,8 @@ async fn run(
                         app.ui_is_dirty();
                         match key.code {
                             KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
-                            KeyCode::Char('s') => app.sort_by_size(),
-                            KeyCode::Char('d') => app.sort_by_date(),
+                            KeyCode::Char('s') => app.sort(&SortKey::Size),
+                            KeyCode::Char('d') => app.sort(&SortKey::Date),
                             // Shift+d: only one modifier away from the sort key
                             // above, hence the `Char` match on the capital.
                             KeyCode::Char('g') => {
@@ -154,7 +154,7 @@ async fn run(
                                     downloader.spawn(job);
                                 }
                             }
-                            KeyCode::Char('n') => app.sort_by_name(),
+                            KeyCode::Char('n') => app.sort(&SortKey::Name),
                             KeyCode::Down => app.select_next(),
                             KeyCode::Up => app.select_previous(),
                             KeyCode::Enter => {
