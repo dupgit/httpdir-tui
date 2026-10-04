@@ -39,6 +39,9 @@ pub struct Download {
     pub state: DownloadState,
 }
 
+/// Determines which SortKey has been stroke and thus which
+/// column needs to be sorted. Used to keep sorting stable
+/// across navigation
 #[derive(Clone)]
 pub enum SortKey {
     Date,
@@ -103,6 +106,8 @@ impl App {
         self.is_ui_dirty = true;
     }
 
+    /// returns a directory sorted by the column selected in
+    /// ordering tuple
     pub fn sort_consistent(&mut self, dir: HttpDirectory) -> HttpDirectory {
         if let Some((ascending, ref sort_key)) = self.ordering {
             match sort_key {
