@@ -157,17 +157,17 @@ impl App {
             .map_or(&[], |dir| dir.entries().as_slice())
     }
 
-    pub fn select_next(&mut self) {
+    pub fn select_next(&mut self, length: usize) {
         let len = self.entries().len();
         if len > 0 {
-            self.selected = (self.selected + 1) % len;
+            self.selected = (self.selected + length) % len;
         }
     }
 
-    pub fn select_previous(&mut self) {
+    pub fn select_previous(&mut self, length: usize) {
         let len = self.entries().len();
         if len > 0 {
-            self.selected = (self.selected + len - 1) % len;
+            self.selected = (self.selected + len - length) % len;
         }
     }
 

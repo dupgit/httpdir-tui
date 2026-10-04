@@ -144,25 +144,27 @@ async fn run(
                     if key.kind == KeyEventKind::Press {
                         app.ui_is_dirty();
                         match key.code {
-                            KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
-                            KeyCode::Char('s') => app.sort(&SortKey::Size),
                             KeyCode::Char('d') => app.sort(&SortKey::Date),
-                            // Shift+d: only one modifier away from the sort key
-                            // above, hence the `Char` match on the capital.
                             KeyCode::Char('g') => {
                                 if let Some(job) = app.download_selected() {
                                     downloader.spawn(job);
                                 }
                             }
                             KeyCode::Char('n') => app.sort(&SortKey::Name),
-                            KeyCode::Down => app.select_next(),
-                            KeyCode::Up => app.select_previous(),
+                            KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
+                            KeyCode::Char('s') => app.sort(&SortKey::Size),
+                            // Shift+d: only one modifier away from the sort key
+                            // above, hence the `Char` match on the capital.
+                            KeyCode::Down => app.select_next(1),
+                            KeyCode::Up => app.select_previous(1),
+                            KeyCode::PageDown => app.select_next(10),
+                            KeyCode::PageUp => app.select_previous(10),
                             KeyCode::Enter => {
                                 if let Some(request) = app.enter_selected() {
                                     spawn_fetch(tx.clone(), request);
                                 }
                             }
-                            KeyCode::Backspace | KeyCode::Left => {
+                            KeyCode::Backspace => {
                                 app.go_back();
                             }
                             _ => {}
