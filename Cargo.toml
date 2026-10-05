@@ -12,7 +12,7 @@ edition = "2024"
 tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "macros", "sync", "time", "fs", "io-util"] }
 crossterm = "0.28"
 ratatui = "0.29"
-httpdirectory = "0.19"
+httpdirectory = "0.20"
 # Same major version as the one `httpdirectory` already depends on, so it
 # is compiled once and shared -- no second HTTP stack in the binary.
 reqwest = "0.13"

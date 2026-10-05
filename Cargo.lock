@@ -645,9 +645,9 @@ dependencies = [
 
 [[package]]
 name = "httpdirectory"
-version = "0.19.5"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6af2c604e0da0c2c47fa0e321308af7129fc9d1205ca95904da8c78a1f5605a"
+checksum = "634e09b4953dd1716532db2c8bfab1b1a13e143bac7661e34c01f5f3ddfd7d0e"
 dependencies = [
  "chrono",
  "const_format",
