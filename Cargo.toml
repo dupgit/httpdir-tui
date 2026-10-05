@@ -1,7 +1,14 @@
 [package]
 name = "httpdir-tui"
-version = "0.1.0"
+version = "0.0.0"
 edition = "2024"
+authors = ["Olivier Delhomme <olivier.delhomme@free.fr>"]
+description = "A very simple terminal browser for HTTP directory indexes, with background downloads that can be resumed."
+repository = "https://github.com/dupgit/httpdir-tui"
+license = "MIT OR Apache-2.0"
+keywords = ["http", "directory", "file", "terminal", "tui", "browser"]
+categories = ["web-programming", "parsing"]
+rust-version = "1.88"
 
 [dependencies]
 # Only the tokio features actually used: a multi-threaded runtime, the
