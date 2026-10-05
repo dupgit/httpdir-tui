@@ -39,7 +39,7 @@ pub struct Download {
     pub state: DownloadState,
 }
 
-/// Determines which SortKey has been stroke and thus which
+/// Determines which `SortKey` has been stroke and thus which
 /// column needs to be sorted. Used to keep sorting stable
 /// across navigation
 #[derive(Clone)]
@@ -224,7 +224,7 @@ impl App {
 
         let progress = Arc::new(Progress::default());
         let id = self.downloads.len();
-        let (job, state) = match Job::new(id, &base, link, &name, Arc::clone(&progress)) {
+        let (job, state) = match Job::new(id, base, link, &name, Arc::clone(&progress)) {
             Ok(job) => (Some(job), DownloadState::Running),
             Err(err) => (None, DownloadState::Failed(err)),
         };

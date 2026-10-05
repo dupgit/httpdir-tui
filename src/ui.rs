@@ -18,7 +18,7 @@ use crate::app::{App, Download, DownloadState, Status};
 use httpdirectory::httpdirectoryentry::HttpDirectoryEntry;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
-use ratatui::style::{Style, Stylize};
+use ratatui::style::Style;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, Cell, Paragraph, Row, Table, TableState};
 use std::sync::atomic::Ordering::Relaxed;
