@@ -1,0 +1,98 @@
+[private]
+default:
+    @just --list
+
+name := "httpdir-tui"
+
+# Alias definitions for humans
+alias t := test
+alias d := document
+alias c := coverage
+alias ct := check-typos
+alias cc := check-commits
+alias p := publish
+
+# Installs all cargo tools to build a release or test coverage
+install-dev-tools:
+    cargo install cargo-release cargo-sbom cargo-tarpaulin cargo-nextest typos-cli conventional_commits_linter cargo-msrv cargo-llvm-cov cargo-crap
+
+# Linting commits from latest tag
+check-commits:
+    conventional_commits_linter --max-commit-title-length 75 $(git rev-list --tags --max-count=1)
+
+# Verifying that the MSRV is still Ok.
+msrv:
+    cargo msrv verify
+
+# Bumps {patch} (major, minor or patch) version number and does a release
+bump patch: check-typos check-commits msrv
+    # Ensures that the source code is correctly formatted -> it should not modify anything
+    cargo fmt
+
+    # Checking that we do not have any untracked or uncommitted file
+    git status -s | wc -l | grep '0'
+
+    # Updating all dependencies
+    cargo update
+
+    # Bumping release version upon what has been asked on command line (major, minor or patch)
+    cargo release version {{ patch }} --no-confirm --execute
+
+    # Building, testing and building doc to ensure one can build with these dependencies
+    cargo build --release
+    cargo test --release
+    cargo doc --no-deps
+
+    # Getting coverage information with cargo-llvm-cov and saving it for later use
+    # with cargo-crap: `just crap`
+    cargo llvm-cov --lcov --output-path lcov.info
+    cargo crap --lcov lcov.info --path src/ --format json --output baseline.json
+
+    # Generetaing a Software Bills of Materials in SPDX format (sorting will reduce the diff size and allow one to figure out what has really changed)
+    cargo sbom | jq --sort-keys | jq '.files = (.files| sort_by(.SPDXID))' | jq '.packages = (.packages| sort_by(.SPDXID))' | jq '.relationships = (.relationships| sort_by(.spdxElementId, .relatedSpdxElement))'>{{ name }}.sbom.spdx.json
+
+    # Creating the release
+    git add Cargo.toml Cargo.lock {{ name }}.sbom.spdx.json baseline.json
+    cargo release commit --no-confirm --execute
+    cargo release tag --no-confirm --execute
+
+# Runs tests for the project
+test:
+    cargo nextest run
+
+# Creates the documentation and open it in a browser
+document:
+    cargo doc --no-deps --open
+
+# Publishing in the git repository (with tags)
+git-publish:
+    git push
+    git push --tags
+
+# Publishing to crates.io
+rust-publish:
+    cargo publish
+
+# Publishing to git and then to crates.io
+publish: git-publish rust-publish
+
+# Runs a coverage test and open it's result in a web browser
+coverage:
+    cargo tarpaulin --frozen --exclude-files benches/*.rs -o Html
+    open tarpaulin-report.html
+
+# Runs cargo-crap to get the CRAP score of each functions
+crap:
+    # Running coverage report with llvm-cov
+    cargo llvm-cov --lcov --output-path lcov.info
+
+    # Running crap with coverage information
+    cargo crap --lcov lcov.info --path src/ --baseline baseline.json --fail-regression
+
+# Check for typos
+check-typos:
+    typos src/ README.md .justfile
+
+# Invoke clippy in pedantic mode
+clippy:
+    cargo clippy -- -W clippy::pedantic
