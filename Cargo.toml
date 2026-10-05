@@ -6,7 +6,7 @@ authors = ["Olivier Delhomme <olivier.delhomme@free.fr>"]
 description = "A very simple terminal browser for HTTP directory indexes, with background downloads that can be resumed."
 repository = "https://github.com/dupgit/httpdir-tui"
 license = "MIT OR Apache-2.0"
-keywords = ["http", "directory", "file", "terminal", "tui", "browser"]
+keywords = ["http", "directory", "file", "terminal", "browser"]
 categories = ["web-programming", "parsing"]
 rust-version = "1.88"
 
