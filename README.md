@@ -1,7 +1,7 @@
 # httpdir-tui
 
-A terminal browser for HTTP directory indexes, with background downloads
-that can be resumed.
+A very simple terminal browser for HTTP directory indexes, with background
+downloads that can be resumed.
 
 Many mirrors and software archives publish their files as plain "index of"
 pages (Apache `mod_autoindex`, nginx `autoindex`, h5ai, miniserve, ...).
@@ -11,19 +11,21 @@ browser. It is built on [ratatui](https://ratatui.rs) and on the
 [`httpdirectory`](https://crates.io/crates/httpdirectory) crate, which does
 the actual parsing of the index pages.
 
+![Directory of cloud.debian.org/images/cloud/ website](cloud_debian.png)
+
 ## Features
 
 - **Browse** a remote directory index: type, date, name and size of every
-  entry, `..` included. Any index format understood by `httpdirectory` works.
+  entry. Any index format understood by `httpdirectory` works.
 - **Sort** the current listing by name, date or size, ascending or
   descending, with an arrow in the column header.
 - **Go back instantly**: previously visited directories are kept in memory,
-  so going up again never hits the network.
+  so going back never hits the network.
 - **Download in the background** while you keep browsing. A panel shows the
   most recent transfers with their progress.
 - **Resume interrupted downloads**: after a failure or a quit, pressing the
-  download key again continues where the transfer stopped, as long as the
-  server can prove the file has not changed (see below).
+  download key again (on the same file) continues where the transfer stopped,
+  as long as the server can prove the file has not changed (see below).
 - **Stay responsive** whatever the speed of the server: the interface never
   waits for the network.
 
@@ -31,10 +33,14 @@ the actual parsing of the index pages.
 
 Rust 1.88 or later (required by `httpdirectory`).
 
+## Install
+
+Use `cargo install httpdir-tui` to install httpdir-tui
+
 ## Run
 
 ```
-cargo run --release -- https://cloud.debian.org/images/cloud/
+httpdir-tui https://cloud.debian.org/images/cloud/
 ```
 
 The URL is optional: without it, the Debian cloud images index above is
@@ -43,14 +49,15 @@ program from.
 
 ## Keys
 
-| Key                  | Action                                              |
-|----------------------|-----------------------------------------------------|
-| `Up` / `Down`        | Move the selection                                  |
-| `Enter`              | Open the selected directory (or `..`)               |
-| `Backspace` / `Left` | Go back to the previous directory (no network call) |
-| `n` / `d` / `s`      | Sort by name / date / size; press again to reverse  |
-| `g`                  | Download the selected file                           |
-| `q` / `Esc`          | Quit                                                |
+| Key                   | Action                                              |
+|-----------------------|-----------------------------------------------------|
+| `Up` / `Down`         | Move the selection by one                           |
+| `PageUp` / `PageDown` | Move the selection by ten                           |
+| `Enter`               | Open the selected directory (or `..`)               |
+| `Backspace`           | Go back to the previous directory (no network call) |
+| `n` / `d` / `s`       | Sort by name / date / size; press again to reverse  |
+| `g`                   | Download the selected file                           |
+| `q` / `Esc`           | Quit                                                |
 
 ## Downloads
 
@@ -110,4 +117,4 @@ fresh start, delete the `.part` file.
 - Quitting while a download is running abandons it. The `.part` and
   `.part.meta` files stay on disk so that it can be resumed next time.
 - Downloads always go to the launch directory; there is no destination
-  setting yet.
+  setting.
