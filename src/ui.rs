@@ -278,7 +278,13 @@ fn entry_size_label(entry: &HttpDirectoryEntry) -> String {
     // so this one still needs an explicit match to reach it — it is only
     // meaningful for files; directories and the parent marker show "-".
     match entry {
-        HttpDirectoryEntry::File(inner) => inner.apparent_size().to_string(),
+        HttpDirectoryEntry::File(inner) => {
+            if inner.size().is_some() {
+                inner.apparent_size().to_string()
+            } else {
+                "".to_string()
+            }
+        }
         HttpDirectoryEntry::Directory(_) | HttpDirectoryEntry::ParentDirectory(_) => {
             "-".to_string()
         }
