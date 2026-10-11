@@ -16,10 +16,13 @@
 //! and always restores the terminal afterwards, even on error.
 
 mod app;
+mod cli;
 mod download;
 mod fetch;
 mod ui;
+
 use app::{App, SortKey};
+use cli::Cli;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use crossterm::execute;
 use crossterm::terminal::{
@@ -33,17 +36,13 @@ use std::io;
 use std::time::Duration;
 use tokio::sync::mpsc;
 
-const DEFAULT_URL: &str = "https://cloud.debian.org/images/cloud/";
-
 // `#[tokio::main]` is a macro that generates a small synchronous `main`
 // which starts a tokio runtime and immediately runs this `async fn` on
 // it. It's what lets us `.await` things (network calls, channel receives)
 // directly in `main` and `run`.
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    let start_url = std::env::args()
-        .nth(1)
-        .unwrap_or_else(|| DEFAULT_URL.to_string());
+    let cli = Cli::analyze();
 
     // Built before touching the terminal: if the HTTP client cannot be
     // created, the error is printed on a normal, un-broken terminal.
@@ -66,7 +65,7 @@ async fn main() -> io::Result<()> {
     // without either side blocking the other.
     let (tx, mut rx) = mpsc::unbounded_channel::<FetchMessage>();
     let mut app = App::new();
-    spawn_fetch(tx.clone(), FetchRequest::Root(start_url));
+    spawn_fetch(tx.clone(), FetchRequest::Root(cli.url));
 
     let result = run(
         &mut terminal,
