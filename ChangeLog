@@ -1,0 +1,4 @@
+0.2.0
+  * New ChangeLog file (this one ;-)
+  * `Clap` for the command line argument parsing (adds --version and --help)
+  * No more default url : if None is provided the program won't run
