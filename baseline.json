@@ -5,14 +5,14 @@
     {
       "file": "src/main.rs",
       "function": "run",
-      "line": 94,
+      "line": 93,
       "cyclomatic": 28.0,
       "coverage": 0.0,
       "crap": 812.0,
       "uncovered": [
         {
-          "start": 94,
-          "end": 179
+          "start": 93,
+          "end": 178
         }
       ]
     },
@@ -61,14 +61,14 @@
     {
       "file": "src/main.rs",
       "function": "main",
-      "line": 43,
+      "line": 44,
       "cyclomatic": 8.0,
       "coverage": 0.0,
       "crap": 72.0,
       "uncovered": [
         {
-          "start": 43,
-          "end": 89
+          "start": 44,
+          "end": 88
         }
       ]
     },
@@ -241,6 +241,20 @@
       ]
     },
     {
+      "file": "src/ui.rs",
+      "function": "entry_size_label",
+      "line": 276,
+      "cyclomatic": 4.0,
+      "coverage": 0.0,
+      "crap": 20.0,
+      "uncovered": [
+        {
+          "start": 276,
+          "end": 292
+        }
+      ]
+    },
+    {
       "file": "src/download.rs",
       "function": "Job::new",
       "line": 66,
@@ -293,20 +307,6 @@
         {
           "start": 252,
           "end": 257
-        }
-      ]
-    },
-    {
-      "file": "src/ui.rs",
-      "function": "entry_size_label",
-      "line": 276,
-      "cyclomatic": 3.0,
-      "coverage": 0.0,
-      "crap": 12.0,
-      "uncovered": [
-        {
-          "start": 276,
-          "end": 286
         }
       ]
     },
@@ -421,6 +421,20 @@
         {
           "start": 268,
           "end": 279
+        }
+      ]
+    },
+    {
+      "file": "src/cli.rs",
+      "function": "Cli::analyze",
+      "line": 20,
+      "cyclomatic": 1.0,
+      "coverage": 0.0,
+      "crap": 2.0,
+      "uncovered": [
+        {
+          "start": 20,
+          "end": 22
         }
       ]
     },
@@ -574,9 +588,9 @@
     }
   ],
   "diagnostics": {
-    "analyzed_files": 5,
-    "lcov_files": 5,
-    "matched_files": 5,
+    "analyzed_files": 6,
+    "lcov_files": 6,
+    "matched_files": 6,
     "source_only": {
       "count": 0,
       "examples": []
