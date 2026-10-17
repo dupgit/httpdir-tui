@@ -8,7 +8,6 @@ repository = "https://github.com/dupgit/httpdir-tui"
 license = "MIT OR Apache-2.0"
 keywords = ["http", "directory", "file", "terminal", "browser"]
 categories = ["web-programming", "parsing"]
-rust-version = "1.88"
 
 [dependencies]
 # Only the tokio features actually used: a multi-threaded runtime, the

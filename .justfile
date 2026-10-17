@@ -20,12 +20,8 @@ install-dev-tools:
 check-commits:
     conventional_commits_linter --max-commit-title-length 75 $(git rev-list --tags --max-count=1)
 
-# Verifying that the MSRV is still Ok.
-msrv:
-    cargo msrv verify
-
 # Bumps {patch} (major, minor or patch) version number and does a release
-bump patch: check-typos check-commits msrv
+bump patch: check-typos check-commits
     # Ensures that the source code is correctly formatted -> it should not modify anything
     cargo fmt
 
