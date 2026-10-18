@@ -24,10 +24,6 @@ mod ui;
 use app::{App, SortKey};
 use cli::Cli;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
-use crossterm::execute;
-use crossterm::terminal::{
-    EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
-};
 use download::{DownloadMessage, Downloader};
 use fetch::{FetchMessage, FetchRequest, spawn_fetch};
 use ratatui::Terminal;
@@ -53,15 +49,9 @@ async fn main() -> io::Result<()> {
     let (dl_tx, mut dl_rx) = mpsc::unbounded_channel::<DownloadMessage>();
     let downloader = Downloader::new(dl_tx).map_err(io::Error::other)?;
 
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-
-    // `Terminal<CrosstermBackend<...>>` is ratatui's handle for drawing:
-    // the backend (crossterm) knows how to move the cursor and write
-    // styled text; `Terminal` adds frame buffering and diffing on top,
-    // so only cells that actually changed are re-sent to the terminal.
-    let mut terminal = Terminal::new(CrosstermBackend::new(stdout))?;
+    // Using a default CrosstermBackend to stdout terminal saving the
+    // previous screen to be restored at the end
+    let mut terminal = ratatui::init();
 
     // An unbounded mpsc channel: many producers (here, one per spawned
     // fetch task), one consumer (the main loop). This is how the
@@ -83,10 +73,8 @@ async fn main() -> io::Result<()> {
 
     // Always restore the terminal, even if `run` returned an error —
     // otherwise the user's shell would stay in raw mode / on the alternate
-    // screen. A panic is not covered: there is no panic hook.
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
+    // screen.
+    ratatui::restore();
 
     result
 }
