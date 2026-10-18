@@ -112,7 +112,7 @@ async fn run(
         // last iteration, apply its result now. If nothing is ready,
         // `try_recv` returns immediately instead of waiting.
         // `while let` (not `if let`): drain everything that is ready, so
-        // results never pile up at one message per 100ms iteration.
+        // results never pile up at one message per 50ms iteration.
         while let Ok(message) = rx.try_recv() {
             app.apply_fetch_result(message);
         }
