@@ -200,6 +200,21 @@ impl App {
         Some(FetchRequest::Cd(current, link))
     }
 
+    pub fn refresh_selected(&mut self) -> Option<FetchRequest> {
+        // One navigation at a time: while a fetch is in flight, its result
+        // is what decides what `current` and `history` become.
+        if matches!(self.status, Status::Loading) {
+            return None;
+        }
+        if let Some(ref httpdirectory) = self.current {
+            let url = httpdirectory.get_url().to_string();
+            self.status = Status::Loading;
+            Some(FetchRequest::Root(url))
+        } else {
+            None
+        }
+    }
+
     /// Builds the job needed to download the selected entry, if it is a
     /// file and is not already being downloaded. Returns `None` otherwise.
     /// Invalid entries (e.g. a hostile file name) are reported in the

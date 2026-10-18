@@ -151,6 +151,11 @@ async fn run(
                             }
                             KeyCode::Char('n') => app.sort(&SortKey::Name),
                             KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
+                            KeyCode::Char('r') => {
+                                if let Some(request) = app.refresh_selected() {
+                                    spawn_fetch(tx.clone(), request);
+                                }
+                            }
                             KeyCode::Char('s') => app.sort(&SortKey::Size),
                             // Shift+d: only one modifier away from the sort key
                             // above, hence the `Char` match on the capital.

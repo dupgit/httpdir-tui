@@ -26,6 +26,12 @@ use std::sync::atomic::Ordering::Relaxed;
 /// Most recent downloads shown in the panel (older ones scroll away).
 const MAX_SHOWN_DOWNLOADS: usize = 5;
 
+/// Help message width used to determine how many lines the UI will
+/// display according to the terminal width. This terminal width should
+/// be at least of 63 character and must be > HELP_MESSAGE_WIDTH to be
+/// displayed on one line.
+const HELP_MESSAGE_WIDTH: u16 = 123;
+
 /// Entry point called once per frame from the main loop (`terminal.draw`).
 /// `frame` is where widgets get rendered; `app` is read-only here — this
 /// function only *displays* state, it never changes it.
@@ -34,10 +40,14 @@ pub fn draw(frame: &mut Frame, app: &App) {
     // changes automatically if the user resizes the terminal window).
     let area = frame.area();
 
-    // help message is 96 characters wide so use two lines (4 because
-    // we have top and bottom borders) when the terminal is smaller
+    // help message is HELP_MESSAGE_WIDTH characters wide so use two lines
+    // (4 because we have top and bottom borders) when the terminal is smaller
     // than that.
-    let help = if area.width > 96 { 3 } else { 4 };
+    let help = if area.width > HELP_MESSAGE_WIDTH {
+        3
+    } else {
+        4
+    };
 
     // `Layout::vertical([...])` splits one Rect into several, stacked
     // top to bottom, sized by the given constraints:
@@ -217,9 +227,13 @@ fn draw_status_bar(frame: &mut Frame, area: Rect, app: &App) {
     let text = match &app.status {
         Status::Loading => "Loading...".to_string(),
         Status::Ready => {
-            let separator = if area.width > 96 { '|' } else { '\n' };
+            let separator = if area.width > HELP_MESSAGE_WIDTH {
+                '|'
+            } else {
+                '\n'
+            };
             format!(
-                " Up/Down: move | Enter: open | Backspace: back {separator} n, d, s: sort by name, date, size | g: download | Esc: quit"
+                " Up/Down: move | Enter: open | Backspace: back | r: refresh {separator} n, d, s: sort by name, date, size | g: download | Esc: quit"
             )
         }
         Status::Error(err) => format!("Error: {err}"),
