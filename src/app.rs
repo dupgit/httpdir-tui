@@ -134,7 +134,15 @@ impl App {
                 // `history` consistent when a navigation fails. At startup
                 // there is no previous listing, so nothing is pushed.
                 if let Some(previous) = self.current.replace(dir) {
-                    self.history.push(previous);
+                    if let Some(ref current_dir) = self.current {
+                        // Do not push history on refresh to avoid keeping
+                        // outdating pages
+                        if previous.get_url() != current_dir.get_url() {
+                            self.history.push(previous);
+                        }
+                    } else {
+                        self.history.push(previous);
+                    }
                 }
                 self.selected = 0;
                 self.status = Status::Ready;
