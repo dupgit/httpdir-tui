@@ -87,7 +87,7 @@ crap:
 
 # Check for typos
 check-typos:
-    typos src/ README.md .justfile
+    typos src/ README.md .justfile ChangeLog
 
 # Invoke clippy in pedantic mode
 clippy:
