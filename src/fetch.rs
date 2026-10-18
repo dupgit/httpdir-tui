@@ -1,8 +1,8 @@
 //! Everything that talks to the network lives here, in a background task.
 //!
 //! This isn't a ratatui concern, but it's the piece that makes a
-//! *responsive* ratatui UI possible: `terminal.draw` and
-//! `event::poll` in `main.rs` must keep running every ~100ms no matter
+//! *responsive* ratatui UI possible: the loop in `main.rs` (`event::poll`
+//! with a 50 ms timeout, then a redraw if needed) must keep turning no matter
 //! how slow the remote server is, or the whole terminal would appear
 //! frozen while waiting for HTTP. So the UI thread never `.await`s an
 //! HTTP request directly — it hands the work to `tokio::spawn` and goes

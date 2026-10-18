@@ -38,8 +38,9 @@ use tokio::sync::mpsc;
 
 // `#[tokio::main]` is a macro that generates a small synchronous `main`
 // which starts a tokio runtime and immediately runs this `async fn` on
-// it. It's what lets us `.await` things (network calls, channel receives)
-// directly in `main` and `run`.
+// it. The runtime is what `tokio::spawn` needs for the fetch and download
+// tasks. Note that `run` itself never awaits anything: it polls the
+// channels with `try_recv`.
 #[tokio::main]
 async fn main() -> io::Result<()> {
     let cli = Cli::analyze();
@@ -78,8 +79,8 @@ async fn main() -> io::Result<()> {
     .await;
 
     // Always restore the terminal, even if `run` returned an error —
-    // otherwise a crash would leave the user's shell in raw mode /
-    // stuck on the alternate screen.
+    // otherwise the user's shell would stay in raw mode / on the alternate
+    // screen. A panic is not covered: there is no panic hook.
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
     terminal.show_cursor()?;
@@ -87,9 +88,13 @@ async fn main() -> io::Result<()> {
     result
 }
 
-/// The main loop. Each iteration: draw one frame, check for a finished
-/// background fetch, then wait (briefly) for a key press.
-#[allow(clippy::unused_async, reason = "Clippy false detection")]
+/// The main loop. Each iteration: draw the frame if the state changed,
+/// apply the fetch and download results that are ready, then wait up to
+/// 50 ms for a terminal event.
+#[allow(
+    clippy::unused_async,
+    reason = "`run` never awaits; kept async for now"
+)]
 async fn run(
     terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
     app: &mut App,
@@ -121,6 +126,8 @@ async fn run(
             app.apply_download_result(message);
         }
 
+        // Progress lives in atomics, not in messages: nothing tells the
+        // loop it changed, so redraw on every iteration while a download runs.
         if app.active_downloads() > 0 {
             app.ui_is_dirty();
         }
@@ -152,13 +159,11 @@ async fn run(
                             KeyCode::Char('n') => app.sort(&SortKey::Name),
                             KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
                             KeyCode::Char('r') => {
-                                if let Some(request) = app.refresh_selected() {
+                                if let Some(request) = app.refresh_page() {
                                     spawn_fetch(tx.clone(), request);
                                 }
                             }
                             KeyCode::Char('s') => app.sort(&SortKey::Size),
-                            // Shift+d: only one modifier away from the sort key
-                            // above, hence the `Char` match on the capital.
                             KeyCode::Down => app.select_next(1),
                             KeyCode::Up => app.select_previous(1),
                             KeyCode::PageDown => app.select_next(10),

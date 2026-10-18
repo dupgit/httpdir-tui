@@ -39,9 +39,8 @@ pub struct Download {
     pub state: DownloadState,
 }
 
-/// Determines which `SortKey` has been stroke and thus which
-/// column needs to be sorted. Used to keep sorting stable
-/// across navigation
+/// Column the listing is sorted by. Stored in `App::ordering` so that
+/// the same order is applied to every listing visited afterwards.
 #[derive(Clone)]
 pub enum SortKey {
     Date,
@@ -60,7 +59,7 @@ pub struct App {
     /// `apply_fetch_result`), so a failed navigation leaves it untouched.
     history: Vec<HttpDirectory>,
     /// Index into `entries()` of the currently highlighted row. Handed
-    /// to ratatui's `ListState` each frame in `ui::draw_entries`.
+    /// to ratatui's `TableState` each frame in `ui::draw_entries`.
     pub selected: usize,
     pub status: Status,
     pub ordering: Option<(bool, SortKey)>,
@@ -69,8 +68,8 @@ pub struct App {
     /// index in this vector is the id used by `download::DownloadMessage`.
     pub downloads: Vec<Download>,
 
-    /// true when something changed in the application that needs to
-    /// to draw it's frame again
+    /// `true` when the state changed and the next loop iteration must
+    /// draw the frame again.
     pub is_ui_dirty: bool,
 }
 
@@ -93,21 +92,19 @@ impl App {
         }
     }
 
-    /// The terminal frame has just been redraw so
-    /// it is marked as clean (not dirty)
+    /// The frame has just been drawn: the state is marked as clean.
     pub fn ui_is_clean(&mut self) {
         self.is_ui_dirty = false;
     }
 
-    /// The application state has changed and the ui
-    /// needs to be redrawned to reflect this change
-    /// so it is marked as dirty
+    /// The state has changed and the frame must be drawn again to
+    /// reflect it: the state is marked as dirty.
     pub fn ui_is_dirty(&mut self) {
         self.is_ui_dirty = true;
     }
 
-    /// returns a directory sorted by the column selected in
-    /// ordering tuple
+    /// Returns `dir` sorted according to `ordering`, or unchanged if no
+    /// sort has been requested yet.
     pub fn sort_consistent(&mut self, dir: HttpDirectory) -> HttpDirectory {
         if let Some((ascending, ref sort_key)) = self.ordering {
             match sort_key {
@@ -136,7 +133,7 @@ impl App {
                 if let Some(previous) = self.current.replace(dir) {
                     if let Some(ref current_dir) = self.current {
                         // Do not push history on refresh to avoid keeping
-                        // outdating pages
+                        // outdated pages
                         if previous.get_url() != current_dir.get_url() {
                             self.history.push(previous);
                         }
@@ -186,8 +183,7 @@ impl App {
 
     /// Builds the request needed to descend into the selected entry, if it
     /// is a directory (or the parent-directory marker). Returns `None` for
-    /// files: this skeleton only browses, it does not download or open
-    /// anything -- add that deliberately, rather than by accident.
+    /// files: `Enter` never opens them (downloading is `download_selected`).
     pub fn enter_selected(&mut self) -> Option<FetchRequest> {
         // One navigation at a time: while a fetch is in flight, its result
         // is what decides what `current` and `history` become.
@@ -208,7 +204,10 @@ impl App {
         Some(FetchRequest::Cd(current, link))
     }
 
-    pub fn refresh_selected(&mut self) -> Option<FetchRequest> {
+    /// Builds the request that reloads the current listing (the `r` key).
+    /// A reload of the same URL is not pushed onto `history`
+    /// (see `apply_fetch_result`).
+    pub fn refresh_page(&mut self) -> Option<FetchRequest> {
         // One navigation at a time: while a fetch is in flight, its result
         // is what decides what `current` and `history` become.
         if matches!(self.status, Status::Loading) {
@@ -277,11 +276,11 @@ impl App {
             .count()
     }
 
-    /// Sorts the current listing by the appropriate method which from
-    /// `httpdirectory` takes `self` by value and hands back a sorted
-    /// `Self` -- it is a plain, synchronous, in-memory operation on
-    /// already-fetched entries, so no fetch task/channel round-trip is
-    /// needed here: it can run directly on the UI thread.
+    /// Sorts the current listing by `sort`. The direction flips on every
+    /// call, whichever column was used before; the very first call sorts
+    /// in descending order. The `httpdirectory` sort methods take `self` by
+    /// value and work in memory on already-fetched entries, so no fetch
+    /// task is needed: this runs directly on the UI thread.
     pub fn sort(&mut self, sort: &SortKey) {
         let ascending = if self.ordering.is_none() {
             false

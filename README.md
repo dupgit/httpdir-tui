@@ -18,7 +18,9 @@ the actual parsing of the index pages.
 - **Browse** a remote directory index: type, date, name and size of every
   entry. Any index format understood by `httpdirectory` works.
 - **Sort** the current listing by name, date or size, ascending or
-  descending, with an arrow in the column header.
+  descending, with an arrow in the column header. The order is kept while
+  you navigate.
+- **Refresh** the current listing without leaving it.
 - **Go back instantly**: previously visited directories are kept in memory,
   so going back never hits the network.
 - **Download in the background** while you keep browsing. A panel shows the
@@ -35,7 +37,7 @@ Rust 1.88 or later (required by `httpdirectory`).
 
 ## Install
 
-Use `cargo install httpdir-tui` to install httpdir-tui
+Use `cargo install httpdir-tui --locked` to install httpdir-tui
 
 ## Run
 
@@ -43,19 +45,21 @@ Use `cargo install httpdir-tui` to install httpdir-tui
 httpdir-tui https://cloud.debian.org/images/cloud/
 ```
 
-The URL is optional: without it, the Debian cloud images index above is
-opened. Downloaded files are written to the directory you launched the
-program from.
+The URL is required. Downloaded files are written to the directory you launched
+the program from.
 
 ## Keys
 
 | Key                   | Action                                              |
 |-----------------------|-----------------------------------------------------|
-| `Up` / `Down`         | Move the selection by one                           |
+| `Up` / `Down`         | Move the selection by one (wraps around at the      |
+|                       | ends)                                               |
 | `PageUp` / `PageDown` | Move the selection by ten                           |
 | `Enter`               | Open the selected directory (or `..`)               |
 | `Backspace`           | Go back to the previous directory (no network call) |
-| `n` / `d` / `s`       | Sort by name / date / size; press again to reverse  |
+| `n` / `d` / `s`       | Sort by name / date / size; each press flips the     | 
+|                       | direction (the first one sorts descending)           |
+| `r`                   | Reload the current directory                        |
 | `g`                   | Download the selected file                           |
 | `q` / `Esc`           | Quit                                                |
 
@@ -63,7 +67,7 @@ program from.
 
 - A file is first written to `<name>.part` and renamed to `<name>` only once
   it is complete: a file with its final name is always a whole file.
-- An existing file is never overwritten.
+- An existing file is never overwritten (checked when the transfer starts).
 - At most two transfers run at the same time; the others wait their turn, to
   stay polite with the remote server.
 - Names announced by the remote page are untrusted data: a name that is not
@@ -99,15 +103,17 @@ fresh start, delete the `.part` file.
   selection, sort order, downloads. It is mutated in one place only.
 - `src/ui.rs`: ratatui rendering (URL header, entry table, downloads panel,
   help bar). It only reads the state.
+- `src/cli.rs`: command line (a single, required URL), parsed by clap.
 - `src/main.rs`: terminal setup, event loop and wiring of the modules above.
-  The screen is redrawn only when something changed.
+  The screen is redrawn only when something changed (and on every 50 ms
+  tick while a download runs, since its progress is not announced).
 
 ## Deliberately not done
 
 - No prefetching of the tree: each level is loaded on demand, which limits
   the number of requests sent to the server.
-- No re-request of a directory already visited: going back pops a local
-  history stack.
+- Going back (`Backspace`) never re-requests a directory: it pops a local
+  history stack. Entering a directory a second time does fetch it again.
 - No automatic retries: a failed transfer waits for you to press `g` again,
   rather than hammering a struggling server.
 - No opening of files: `Enter` only descends into directories.

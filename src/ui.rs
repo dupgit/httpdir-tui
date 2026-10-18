@@ -26,10 +26,8 @@ use std::sync::atomic::Ordering::Relaxed;
 /// Most recent downloads shown in the panel (older ones scroll away).
 const MAX_SHOWN_DOWNLOADS: usize = 5;
 
-/// Help message width used to determine how many lines the UI will
-/// display according to the terminal width. This terminal width should
-/// be at least of 63 character and must be > HELP_MESSAGE_WIDTH to be
-/// displayed on one line.
+/// Terminal width above which the help text fits on one line. Below it,
+/// the text is split in two lines and the help bar grows from 3 to 4 rows.
 const HELP_MESSAGE_WIDTH: u16 = 123;
 
 /// Entry point called once per frame from the main loop (`terminal.draw`).
@@ -40,9 +38,9 @@ pub fn draw(frame: &mut Frame, app: &App) {
     // changes automatically if the user resizes the terminal window).
     let area = frame.area();
 
-    // help message is HELP_MESSAGE_WIDTH characters wide so use two lines
-    // (4 because we have top and bottom borders) when the terminal is smaller
-    // than that.
+    // The help text is about HELP_MESSAGE_WIDTH characters long: on a
+    // narrower terminal it takes two lines, i.e. 4 rows with the borders
+    // (3 for a single line).
     let help = if area.width > HELP_MESSAGE_WIDTH {
         3
     } else {
@@ -52,11 +50,11 @@ pub fn draw(frame: &mut Frame, app: &App) {
     // `Layout::vertical([...])` splits one Rect into several, stacked
     // top to bottom, sized by the given constraints:
     //   - `Length(n)`: exactly n rows.
-    //   - `Min(0)`: "take whatever is left" — used for the middle panel
-    //     so it grows/shrinks with the terminal size.
+    //   - `Min(1)`: "take whatever is left", at least one row — used for
+    //     the middle panel so it grows/shrinks with the terminal size.
     // The result is a Vec<Rect> in the same order as the constraints.
     // The downloads panel only takes room once a download exists: one row
-    // per shown download, plus 2 for the border.,
+    // per shown download, plus 2 for the border.
     let shown = u16::try_from(app.downloads.len().min(MAX_SHOWN_DOWNLOADS)).expect("app.downloads.len().min(MAX_SHOWN_DOWNLOADS) is 0 to 5 included which is convertible to a u16");
     let downloads_height = if shown == 0 { 0 } else { shown + 2 };
 
@@ -64,7 +62,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
         Constraint::Length(3), // header: bordered box, needs 3 rows (1 content + 2 border)
         Constraint::Min(1),    // entry table: fills all remaining space
         Constraint::Length(downloads_height), // downloads panel (0 = hidden)
-        Constraint::Length(help), // status line: a single row, no border
+        Constraint::Length(help), // status line and help bar: bordered, 3 or 4 rows
     ])
     .split(area);
 
@@ -106,14 +104,14 @@ fn draw_header(frame: &mut Frame, area: Rect, app: &App) {
 /// highlighted — this is ratatui's *stateful* widget pattern: state that
 /// must persist across frames (like "which row is selected") lives
 /// outside the widget and is passed in by `&mut` reference each time.
-/// Here we rebuild a fresh `TableState` every frame from `app.selected`,
-/// which is simple and correct for a one-way flow (App -> UI); ratatui
-/// also allows keeping the `TableState` itself as persistent app state if
-/// you want the widget to own scroll offsets etc.
+/// Here we rebuild a fresh `TableState` every frame from `app.selected`.
+/// That keeps the flow one-way (App -> UI) and needs no scroll state in
+/// `App`. The scroll offset restarts from 0 each frame, so past the first
+/// screenful the selection is always drawn on the bottom row, also when
+/// moving up.
 fn draw_entries(frame: &mut Frame, area: Rect, app: &App) {
-    // The header row: plain text cells, bolded so it stands out from the
-    // data rows below it.
-    // let header = Row::new(["Type", "Date", "Name", "Size"]).style(Style::default().bold());
+    // The header row: the labels come from `app.header` (they carry the
+    // sort arrow), bolded so they stand out from the data rows below.
     let header = Row::new(app.header.clone()).style(Style::default().bold());
 
     // Turn each domain entry into a `Row` of `Cell`s. ratatui widgets are
@@ -125,7 +123,7 @@ fn draw_entries(frame: &mut Frame, area: Rect, app: &App) {
     // fixed widths for the short, predictable columns, and `Min` for the
     // name column so it absorbs any extra terminal width.
     let widths = [
-        Constraint::Length(5),  // Type: "DIR", "FILE", ".."
+        Constraint::Length(5),  // Type: "DIR" or "FILE"
         Constraint::Length(17), // Date: " YYYY-MM-DD HH:MM "
         Constraint::Min(20),    // Name: grows with the terminal
         Constraint::Length(10), // Size
@@ -221,7 +219,8 @@ fn human_size(bytes: u64) -> String {
     }
 }
 
-/// One line of plain text, no border: a minimal status/help bar.
+/// Status line and bordered help bar. While loading or after an error,
+/// it shows that message instead of the key help.
 fn draw_status_bar(frame: &mut Frame, area: Rect, app: &App) {
     let title = Span::styled(" Help ", Style::default().bold());
     let text = match &app.status {
@@ -290,7 +289,8 @@ fn entry_date_label(entry: &HttpDirectoryEntry) -> String {
 fn entry_size_label(entry: &HttpDirectoryEntry) -> String {
     // Size lives on `Entry`, not on the `HttpDirectoryEntry` enum itself,
     // so this one still needs an explicit match to reach it — it is only
-    // meaningful for files; directories and the parent marker show "-".
+    // meaningful for files (left empty when the size is unknown);
+    // directories and the parent marker show "-".
     match entry {
         HttpDirectoryEntry::File(inner) => {
             if inner.size().is_some() {
