@@ -71,9 +71,15 @@ impl Job {
         progress: Arc<Progress>,
     ) -> Result<Self, String> {
         let file_name = safe_file_name(name).ok_or_else(|| format!("unsafe file name {name:?}"))?;
-        let url = Url::parse(base)
-            .and_then(|base| base.join(link))
-            .map_err(|err| err.to_string())?;
+        let base = Url::parse(base).map_err(|err| err.to_string())?;
+        let url = base.join(link).map_err(|err| err.to_string())?;
+        // The link comes from a remote page as well: `join` happily accepts
+        // an absolute (or scheme-relative) link, which would send the
+        // download to any other host. Stay on the listing's origin
+        // (scheme, host and port).
+        if url.origin() != base.origin() {
+            return Err(format!("link leaves the listing's origin: {url}"));
+        }
         Ok(Self {
             id,
             url,
@@ -300,8 +306,39 @@ fn with_suffix(path: &Path, suffix: &str) -> PathBuf {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_range_start, safe_file_name, with_suffix};
+    use super::{Job, Progress, parse_range_start, safe_file_name, with_suffix};
     use std::path::Path;
+    use std::sync::Arc;
+
+    const BASE: &str = "https://mirror.example/pub/";
+
+    fn url_of(link: &str) -> Result<String, String> {
+        Job::new(0, BASE, link, "f.iso", Arc::new(Progress::default()))
+            .map(|job| job.url.to_string())
+    }
+
+    #[test]
+    fn keeps_links_on_the_same_origin() {
+        assert_eq!(url_of("f.iso").unwrap(), "https://mirror.example/pub/f.iso");
+        assert_eq!(
+            url_of("/other/f.iso").unwrap(),
+            "https://mirror.example/other/f.iso"
+        );
+    }
+
+    #[test]
+    fn rejects_links_leaving_the_origin() {
+        for bad in [
+            "https://evil.example/f.iso",
+            "//evil.example/f.iso",                      // scheme-relative
+            "http://127.0.0.1:8080/f.iso",               // local network
+            "https://mirror.example:8443/f.iso",         // other port
+            "https://mirror.example@evil.example/f.iso", // userinfo trick
+            "https://mirror.example.evil.example/f.iso", // look-alike host
+        ] {
+            assert!(url_of(bad).is_err(), "{bad:?}");
+        }
+    }
 
     #[test]
     fn accepts_plain_names() {
