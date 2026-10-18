@@ -1,20 +1,20 @@
 {
   "SPDXID": "SPDXRef-DOCUMENT",
   "creationInfo": {
-    "created": "2026-10-17T20:31:13Z",
+    "created": "2026-10-18T16:02:20Z",
     "creators": [
       "Tool: cargo-sbom-v0.10.0"
     ]
   },
   "dataLicense": "CC0-1.0",
-  "documentNamespace": "https://spdx.org/spdxdocs/httpdir-tui-44c5b39a-8c10-4b2a-b710-b8bf785d9241",
+  "documentNamespace": "https://spdx.org/spdxdocs/httpdir-tui-72cedbf2-548c-4ac0-b54a-d9b95942a804",
   "files": [
     {
       "SPDXID": "SPDXRef-File-httpdir-tui",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "dc1a123d7be8fb71fae13866116ad0ff3384a46d"
+          "checksumValue": "1b2f119b402d8f3a323b325061e73ab221ab226b"
         }
       ],
       "fileName": "./Cargo.lock",
@@ -1603,13 +1603,13 @@
       "versionInfo": "1.10.1"
     },
     {
-      "SPDXID": "SPDXRef-Package-httpdir-tui-0.2.0",
+      "SPDXID": "SPDXRef-Package-httpdir-tui-0.3.0",
       "description": "A very simple terminal browser for HTTP directory indexes, with background downloads that can be resumed.",
       "downloadLocation": "NONE",
       "licenseConcluded": "MIT OR Apache-2.0",
       "licenseDeclared": "MIT OR Apache-2.0",
       "name": "httpdir-tui",
-      "versionInfo": "0.2.0"
+      "versionInfo": "0.3.0"
     },
     {
       "SPDXID": "SPDXRef-Package-httpdirectory-0.21.0",
@@ -5676,7 +5676,7 @@
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
-      "relatedSpdxElement": "SPDXRef-Package-httpdir-tui-0.2.0",
+      "relatedSpdxElement": "SPDXRef-Package-httpdir-tui-0.3.0",
       "relationshipType": "GENERATED_FROM",
       "spdxElementId": "SPDXRef-File-httpdir-tui"
     },
@@ -6503,32 +6503,32 @@
     {
       "relatedSpdxElement": "SPDXRef-Package-clap-4.6.7",
       "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-Package-httpdir-tui-0.2.0"
+      "spdxElementId": "SPDXRef-Package-httpdir-tui-0.3.0"
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-crossterm-0.29.0",
       "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-Package-httpdir-tui-0.2.0"
+      "spdxElementId": "SPDXRef-Package-httpdir-tui-0.3.0"
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-httpdirectory-0.21.0",
       "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-Package-httpdir-tui-0.2.0"
+      "spdxElementId": "SPDXRef-Package-httpdir-tui-0.3.0"
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-ratatui-0.30.2",
       "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-Package-httpdir-tui-0.2.0"
+      "spdxElementId": "SPDXRef-Package-httpdir-tui-0.3.0"
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-reqwest-0.13.5",
       "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-Package-httpdir-tui-0.2.0"
+      "spdxElementId": "SPDXRef-Package-httpdir-tui-0.3.0"
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-tokio-1.53.3",
       "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-Package-httpdir-tui-0.2.0"
+      "spdxElementId": "SPDXRef-Package-httpdir-tui-0.3.0"
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-chrono-0.4.45",

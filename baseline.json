@@ -5,126 +5,126 @@
     {
       "file": "src/main.rs",
       "function": "run",
-      "line": 93,
-      "cyclomatic": 28.0,
+      "line": 89,
+      "cyclomatic": 30.0,
       "coverage": 0.0,
-      "crap": 812.0,
+      "crap": 930.0,
       "uncovered": [
         {
-          "start": 93,
-          "end": 178
+          "start": 89,
+          "end": 179
         }
       ]
     },
     {
       "file": "src/download.rs",
       "function": "download",
-      "line": 149,
+      "line": 155,
       "cyclomatic": 18.0,
       "coverage": 0.0,
       "crap": 342.0,
       "uncovered": [
         {
-          "start": 149,
-          "end": 213
+          "start": 155,
+          "end": 219
         }
       ]
     },
     {
       "file": "src/download.rs",
       "function": "request",
-      "line": 217,
+      "line": 223,
       "cyclomatic": 10.0,
       "coverage": 0.0,
       "crap": 110.0,
       "uncovered": [
         {
-          "start": 217,
-          "end": 248
+          "start": 223,
+          "end": 254
         }
       ]
     },
     {
       "file": "src/app.rs",
       "function": "App::download_selected",
-      "line": 207,
+      "line": 251,
       "cyclomatic": 8.0,
       "coverage": 0.0,
       "crap": 72.0,
       "uncovered": [
         {
-          "start": 207,
-          "end": 237
-        }
-      ]
-    },
-    {
-      "file": "src/main.rs",
-      "function": "main",
-      "line": 44,
-      "cyclomatic": 8.0,
-      "coverage": 0.0,
-      "crap": 72.0,
-      "uncovered": [
-        {
-          "start": 44,
-          "end": 88
+          "start": 251,
+          "end": 281
         }
       ]
     },
     {
       "file": "src/app.rs",
       "function": "App::sort",
-      "line": 262,
+      "line": 306,
       "cyclomatic": 7.0,
       "coverage": 0.0,
       "crap": 56.0,
       "uncovered": [
         {
-          "start": 262,
-          "end": 293
+          "start": 306,
+          "end": 337
         }
       ]
     },
     {
       "file": "src/download.rs",
       "function": "read_partial",
-      "line": 252,
+      "line": 258,
       "cyclomatic": 6.0,
       "coverage": 0.0,
       "crap": 42.0,
       "uncovered": [
         {
-          "start": 252,
-          "end": 263
+          "start": 258,
+          "end": 269
+        }
+      ]
+    },
+    {
+      "file": "src/app.rs",
+      "function": "App::apply_fetch_result",
+      "line": 123,
+      "cyclomatic": 6.0,
+      "coverage": 0.0,
+      "crap": 42.0,
+      "uncovered": [
+        {
+          "start": 123,
+          "end": 157
         }
       ]
     },
     {
       "file": "src/app.rs",
       "function": "App::sort_consistent",
-      "line": 111,
+      "line": 108,
       "cyclomatic": 5.0,
       "coverage": 0.0,
       "crap": 30.0,
       "uncovered": [
         {
-          "start": 111,
-          "end": 121
+          "start": 108,
+          "end": 118
         }
       ]
     },
     {
       "file": "src/app.rs",
       "function": "App::enter_selected",
-      "line": 183,
+      "line": 209,
       "cyclomatic": 5.0,
       "coverage": 0.0,
       "crap": 30.0,
       "uncovered": [
         {
-          "start": 183,
-          "end": 201
+          "start": 209,
+          "end": 227
         }
       ]
     },
@@ -145,112 +145,238 @@
     {
       "file": "src/ui.rs",
       "function": "download_line",
-      "line": 176,
+      "line": 184,
       "cyclomatic": 5.0,
       "coverage": 0.0,
       "crap": 30.0,
       "uncovered": [
         {
-          "start": 176,
-          "end": 196
+          "start": 184,
+          "end": 204
         }
       ]
     },
     {
       "file": "src/ui.rs",
       "function": "draw_status_bar",
-      "line": 215,
+      "line": 224,
       "cyclomatic": 5.0,
       "coverage": 0.0,
       "crap": 30.0,
       "uncovered": [
         {
-          "start": 215,
-          "end": 237
+          "start": 224,
+          "end": 250
         }
       ]
     },
     {
       "file": "src/app.rs",
-      "function": "App::apply_fetch_result",
-      "line": 126,
+      "function": "App::select_next",
+      "line": 170,
       "cyclomatic": 4.0,
       "coverage": 0.0,
       "crap": 20.0,
       "uncovered": [
         {
-          "start": 126,
-          "end": 152
+          "start": 170,
+          "end": 186
+        }
+      ]
+    },
+    {
+      "file": "src/app.rs",
+      "function": "App::select_previous",
+      "line": 188,
+      "cyclomatic": 4.0,
+      "coverage": 0.0,
+      "crap": 20.0,
+      "uncovered": [
+        {
+          "start": 188,
+          "end": 204
         }
       ]
     },
     {
       "file": "src/app.rs",
       "function": "App::apply_download_result",
-      "line": 240,
+      "line": 284,
       "cyclomatic": 4.0,
       "coverage": 0.0,
       "crap": 20.0,
       "uncovered": [
         {
-          "start": 240,
-          "end": 248
+          "start": 284,
+          "end": 292
         }
       ]
     },
     {
       "file": "src/app.rs",
       "function": "App::go_back",
-      "line": 309,
+      "line": 353,
       "cyclomatic": 4.0,
       "coverage": 0.0,
       "crap": 20.0,
       "uncovered": [
         {
-          "start": 309,
-          "end": 324
+          "start": 353,
+          "end": 368
         }
       ]
     },
     {
       "file": "src/ui.rs",
       "function": "draw",
-      "line": 32,
+      "line": 36,
       "cyclomatic": 4.0,
       "coverage": 0.0,
       "crap": 20.0,
       "uncovered": [
         {
-          "start": 32,
-          "end": 67
+          "start": 36,
+          "end": 75
         }
       ]
     },
     {
       "file": "src/ui.rs",
       "function": "human_size",
-      "line": 198,
+      "line": 206,
       "cyclomatic": 4.0,
       "coverage": 0.0,
       "crap": 20.0,
       "uncovered": [
         {
-          "start": 198,
-          "end": 212
+          "start": 206,
+          "end": 220
         }
       ]
     },
     {
       "file": "src/ui.rs",
       "function": "entry_size_label",
-      "line": 276,
+      "line": 289,
       "cyclomatic": 4.0,
       "coverage": 0.0,
       "crap": 20.0,
       "uncovered": [
         {
-          "start": 276,
-          "end": 292
+          "start": 289,
+          "end": 306
+        }
+      ]
+    },
+    {
+      "file": "src/download.rs",
+      "function": "range_start",
+      "line": 287,
+      "cyclomatic": 3.0,
+      "coverage": 0.0,
+      "crap": 12.0,
+      "uncovered": [
+        {
+          "start": 287,
+          "end": 289
+        }
+      ]
+    },
+    {
+      "file": "src/app.rs",
+      "function": "App::refresh_page",
+      "line": 232,
+      "cyclomatic": 3.0,
+      "coverage": 0.0,
+      "crap": 12.0,
+      "uncovered": [
+        {
+          "start": 232,
+          "end": 245
+        }
+      ]
+    },
+    {
+      "file": "src/app.rs",
+      "function": "entry_link",
+      "line": 374,
+      "cyclomatic": 3.0,
+      "coverage": 0.0,
+      "crap": 12.0,
+      "uncovered": [
+        {
+          "start": 374,
+          "end": 379
+        }
+      ]
+    },
+    {
+      "file": "src/ui.rs",
+      "function": "entry_type_label",
+      "line": 265,
+      "cyclomatic": 3.0,
+      "coverage": 0.0,
+      "crap": 12.0,
+      "uncovered": [
+        {
+          "start": 265,
+          "end": 270
+        }
+      ]
+    },
+    {
+      "file": "src/download.rs",
+      "function": "Downloader::new",
+      "line": 111,
+      "cyclomatic": 2.0,
+      "coverage": 0.0,
+      "crap": 6.0,
+      "uncovered": [
+        {
+          "start": 111,
+          "end": 127
+        }
+      ]
+    },
+    {
+      "file": "src/app.rs",
+      "function": "App::add_ordering_char",
+      "line": 339,
+      "cyclomatic": 2.0,
+      "coverage": 0.0,
+      "crap": 6.0,
+      "uncovered": [
+        {
+          "start": 339,
+          "end": 349
+        }
+      ]
+    },
+    {
+      "file": "src/main.rs",
+      "function": "main",
+      "line": 44,
+      "cyclomatic": 2.0,
+      "coverage": 0.0,
+      "crap": 6.0,
+      "uncovered": [
+        {
+          "start": 44,
+          "end": 80
+        }
+      ]
+    },
+    {
+      "file": "src/ui.rs",
+      "function": "draw_entries",
+      "line": 112,
+      "cyclomatic": 2.0,
+      "coverage": 0.0,
+      "crap": 6.0,
+      "uncovered": [
+        {
+          "start": 112,
+          "end": 161
         }
       ]
     },
@@ -258,132 +384,14 @@
       "file": "src/download.rs",
       "function": "Job::new",
       "line": 66,
-      "cyclomatic": 3.0,
-      "coverage": 0.0,
-      "crap": 12.0,
-      "uncovered": [
-        {
-          "start": 66,
-          "end": 84
-        }
-      ]
-    },
-    {
-      "file": "src/download.rs",
-      "function": "range_start",
-      "line": 281,
-      "cyclomatic": 3.0,
-      "coverage": 0.0,
-      "crap": 12.0,
-      "uncovered": [
-        {
-          "start": 281,
-          "end": 283
-        }
-      ]
-    },
-    {
-      "file": "src/app.rs",
-      "function": "entry_link",
-      "line": 330,
-      "cyclomatic": 3.0,
-      "coverage": 0.0,
-      "crap": 12.0,
-      "uncovered": [
-        {
-          "start": 330,
-          "end": 335
-        }
-      ]
-    },
-    {
-      "file": "src/ui.rs",
-      "function": "entry_type_label",
-      "line": 252,
-      "cyclomatic": 3.0,
-      "coverage": 0.0,
-      "crap": 12.0,
-      "uncovered": [
-        {
-          "start": 252,
-          "end": 257
-        }
-      ]
-    },
-    {
-      "file": "src/download.rs",
-      "function": "Downloader::new",
-      "line": 105,
-      "cyclomatic": 2.0,
-      "coverage": 0.0,
-      "crap": 6.0,
-      "uncovered": [
-        {
-          "start": 105,
-          "end": 121
-        }
-      ]
-    },
-    {
-      "file": "src/app.rs",
-      "function": "App::select_next",
-      "line": 165,
-      "cyclomatic": 2.0,
-      "coverage": 0.0,
-      "crap": 6.0,
-      "uncovered": [
-        {
-          "start": 165,
-          "end": 170
-        }
-      ]
-    },
-    {
-      "file": "src/app.rs",
-      "function": "App::select_previous",
-      "line": 172,
-      "cyclomatic": 2.0,
-      "coverage": 0.0,
-      "crap": 6.0,
-      "uncovered": [
-        {
-          "start": 172,
-          "end": 177
-        }
-      ]
-    },
-    {
-      "file": "src/app.rs",
-      "function": "App::add_ordering_char",
-      "line": 295,
-      "cyclomatic": 2.0,
-      "coverage": 0.0,
-      "crap": 6.0,
-      "uncovered": [
-        {
-          "start": 295,
-          "end": 305
-        }
-      ]
-    },
-    {
-      "file": "src/ui.rs",
-      "function": "draw_entries",
-      "line": 103,
-      "cyclomatic": 2.0,
-      "coverage": 0.0,
-      "crap": 6.0,
-      "uncovered": [
-        {
-          "start": 103,
-          "end": 153
-        }
-      ]
+      "cyclomatic": 5.0,
+      "coverage": 100.0,
+      "crap": 5.0
     },
     {
       "file": "src/download.rs",
       "function": "safe_file_name",
-      "line": 90,
+      "line": 96,
       "cyclomatic": 4.0,
       "coverage": 100.0,
       "crap": 4.0
@@ -391,7 +399,7 @@
     {
       "file": "src/download.rs",
       "function": "parse_range_start",
-      "line": 286,
+      "line": 292,
       "cyclomatic": 3.0,
       "coverage": 100.0,
       "crap": 3.0
@@ -399,28 +407,28 @@
     {
       "file": "src/download.rs",
       "function": "Downloader::spawn",
-      "line": 124,
+      "line": 130,
       "cyclomatic": 1.0,
       "coverage": 0.0,
       "crap": 2.0,
       "uncovered": [
         {
-          "start": 124,
-          "end": 135
+          "start": 130,
+          "end": 141
         }
       ]
     },
     {
       "file": "src/download.rs",
       "function": "validator_of",
-      "line": 268,
+      "line": 274,
       "cyclomatic": 1.0,
       "coverage": 0.0,
       "crap": 2.0,
       "uncovered": [
         {
-          "start": 268,
-          "end": 279
+          "start": 274,
+          "end": 285
         }
       ]
     },
@@ -441,147 +449,147 @@
     {
       "file": "src/app.rs",
       "function": "App::new",
-      "line": 78,
+      "line": 77,
       "cyclomatic": 1.0,
       "coverage": 0.0,
       "crap": 2.0,
       "uncovered": [
         {
-          "start": 78,
-          "end": 94
+          "start": 77,
+          "end": 93
         }
       ]
     },
     {
       "file": "src/app.rs",
       "function": "App::ui_is_clean",
-      "line": 98,
+      "line": 96,
       "cyclomatic": 1.0,
       "coverage": 0.0,
       "crap": 2.0,
       "uncovered": [
         {
-          "start": 98,
-          "end": 100
+          "start": 96,
+          "end": 98
         }
       ]
     },
     {
       "file": "src/app.rs",
       "function": "App::ui_is_dirty",
-      "line": 105,
+      "line": 102,
       "cyclomatic": 1.0,
       "coverage": 0.0,
       "crap": 2.0,
       "uncovered": [
         {
-          "start": 105,
-          "end": 107
+          "start": 102,
+          "end": 104
         }
       ]
     },
     {
       "file": "src/app.rs",
       "function": "App::entries",
-      "line": 159,
+      "line": 164,
       "cyclomatic": 1.0,
       "coverage": 0.0,
       "crap": 2.0,
       "uncovered": [
         {
-          "start": 159,
-          "end": 163
+          "start": 164,
+          "end": 168
         }
       ]
     },
     {
       "file": "src/app.rs",
       "function": "App::active_downloads",
-      "line": 250,
+      "line": 294,
       "cyclomatic": 1.0,
       "coverage": 0.0,
       "crap": 2.0,
       "uncovered": [
         {
-          "start": 250,
-          "end": 255
+          "start": 294,
+          "end": 299
         }
       ]
     },
     {
       "file": "src/ui.rs",
       "function": "draw_header",
-      "line": 72,
+      "line": 80,
       "cyclomatic": 1.0,
       "coverage": 0.0,
       "crap": 2.0,
       "uncovered": [
         {
-          "start": 72,
-          "end": 93
+          "start": 80,
+          "end": 101
         }
       ]
     },
     {
       "file": "src/ui.rs",
       "function": "draw_downloads",
-      "line": 158,
+      "line": 166,
       "cyclomatic": 1.0,
       "coverage": 0.0,
       "crap": 2.0,
       "uncovered": [
         {
-          "start": 158,
-          "end": 174
+          "start": 166,
+          "end": 182
         }
       ]
     },
     {
       "file": "src/ui.rs",
       "function": "entry_row",
-      "line": 243,
+      "line": 256,
       "cyclomatic": 1.0,
       "coverage": 0.0,
       "crap": 2.0,
       "uncovered": [
         {
-          "start": 243,
-          "end": 250
+          "start": 256,
+          "end": 263
         }
       ]
     },
     {
       "file": "src/ui.rs",
       "function": "entry_name_label",
-      "line": 259,
+      "line": 272,
       "cyclomatic": 1.0,
       "coverage": 0.0,
       "crap": 2.0,
       "uncovered": [
         {
-          "start": 259,
-          "end": 264
+          "start": 272,
+          "end": 277
         }
       ]
     },
     {
       "file": "src/ui.rs",
       "function": "entry_date_label",
-      "line": 266,
+      "line": 279,
       "cyclomatic": 1.0,
       "coverage": 0.0,
       "crap": 2.0,
       "uncovered": [
         {
-          "start": 266,
-          "end": 274
+          "start": 279,
+          "end": 287
         }
       ]
     },
     {
       "file": "src/download.rs",
       "function": "with_suffix",
-      "line": 295,
+      "line": 301,
       "cyclomatic": 1.0,
       "coverage": 100.0,
       "crap": 1.0
