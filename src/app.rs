@@ -170,14 +170,36 @@ impl App {
     pub fn select_next(&mut self, length: usize) {
         let len = self.entries().len();
         if len > 0 {
-            self.selected = (self.selected + length) % len;
+            // Checks if we try to move after the end in the list
+            if self.selected + length >= len {
+                // `PageDown` does not wraps to the top but `Down` does
+                if length > 1 {
+                    self.selected = len - 1;
+                } else {
+                    self.selected = 0;
+                }
+            } else {
+                // The move stays us in the list, it is a regular move
+                self.selected = self.selected + length;
+            }
         }
     }
 
     pub fn select_previous(&mut self, length: usize) {
         let len = self.entries().len();
         if len > 0 {
-            self.selected = (self.selected + len - length) % len;
+            // Checks if we try to move before the beginning of the list
+            if self.selected.checked_sub(length).is_none() {
+                //  `PageUp` does not wraps to the bottom but `Up` does
+                if length > 1 {
+                    self.selected = 0;
+                } else {
+                    self.selected = len - 1;
+                }
+            } else {
+                // The move stays us in the list, it is a regular move
+                self.selected = self.selected - length;
+            }
         }
     }
 

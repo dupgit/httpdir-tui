@@ -36,6 +36,9 @@ use std::io;
 use std::time::Duration;
 use tokio::sync::mpsc;
 
+/// Number of lines a `PageUp` or a `PageDown` key moves in the file list
+const PAGE_UP_DOWN_LINES: usize = 10;
+
 // `#[tokio::main]` is a macro that generates a small synchronous `main`
 // which starts a tokio runtime and immediately runs this `async fn` on
 // it. The runtime is what `tokio::spawn` needs for the fetch and download
@@ -166,8 +169,8 @@ async fn run(
                             KeyCode::Char('s') => app.sort(&SortKey::Size),
                             KeyCode::Down => app.select_next(1),
                             KeyCode::Up => app.select_previous(1),
-                            KeyCode::PageDown => app.select_next(10),
-                            KeyCode::PageUp => app.select_previous(10),
+                            KeyCode::PageDown => app.select_next(PAGE_UP_DOWN_LINES),
+                            KeyCode::PageUp => app.select_previous(PAGE_UP_DOWN_LINES),
                             KeyCode::Enter => {
                                 if let Some(request) = app.enter_selected() {
                                     spawn_fetch(tx.clone(), request);
